@@ -1,0 +1,103 @@
+@inject IVideoEditorService EditorService
+@inject ISnackbar Snackbar
+@using VideoTranslator.Models
+@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">批量操作</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
+            <MudTabPanel Text="翻译">
+                <MudText Class="mt-4 mb-2">选择要翻译的轨道</MudText>
+                <MudSelect T="string" Label="轨道" @bind-Value="selectedTranslateTrack" Variant="Variant.Outlined">
+                    @foreach (var track in EditorService.CurrentProject.Tracks.Where(t => t.Type == TrackType.Subtitle))
+                    {
+                        <MudSelectItem Value="@track.Id">@track.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudText Class="mt-4 mb-2">翻译设置</MudText>
+                <MudSelect T="string" Label="目标语言" @bind-Value="targetLanguage" Variant="Variant.Outlined">
+                    <MudSelectItem Value="@("zh")">中文</MudSelectItem>
+                    <MudSelectItem Value="@("en")">英文</MudSelectItem>
+                </MudSelect>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="识别字幕">
+                <MudText Class="mt-4 mb-2">选择要识别的轨道</MudText>
+                <MudSelect T="string" Label="轨道" @bind-Value="selectedRecognizeTrack" Variant="Variant.Outlined">
+                    @foreach (var track in EditorService.CurrentProject.Tracks.Where(t => t.Type == TrackType.Subtitle))
+                    {
+                        <MudSelectItem Value="@track.Id">@track.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudText Class="mt-4 mb-2">识别设置</MudText>
+                <MudSelect T="string" Label="识别语言" @bind-Value="recognizeLanguage" Variant="Variant.Outlined">
+                    <MudSelectItem Value="@("en")">英文</MudSelectItem>
+                    <MudSelectItem Value="@("zh")">中文</MudSelectItem>
+                </MudSelect>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="生成语音">
+                <MudText Class="mt-4 mb-2">选择要生成语音的轨道</MudText>
+                <MudSelect T="string" Label="轨道" @bind-Value="selectedAudioTrack" Variant="Variant.Outlined">
+                    @foreach (var track in EditorService.CurrentProject.Tracks.Where(t => t.Type == TrackType.Subtitle))
+                    {
+                        <MudSelectItem Value="@track.Id">@track.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudText Class="mt-4 mb-2">语音设置</MudText>
+                <MudSelect T="string" Label="语音类型" @bind-Value="voiceType" Variant="Variant.Outlined">
+                    <MudSelectItem Value="@("male")">男声</MudSelectItem>
+                    <MudSelectItem Value="@("female")">女声</MudSelectItem>
+                </MudSelect>
+                <MudCheckBox T="bool" Label="自动调整时长" @bind-Value="autoAdjustDuration" Class="mt-2" Color="Color.Primary" />
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">取消</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" Disabled="isProcessing">
+            @(isProcessing ? "处理中..." : "开始处理")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance? MudDialog { get; set; }
+
+    private string? selectedTranslateTrack;
+    private string? selectedRecognizeTrack;
+    private string? selectedAudioTrack;
+    private string targetLanguage = "zh";
+    private string recognizeLanguage = "en";
+    private string voiceType = "male";
+    private bool autoAdjustDuration = true;
+    private bool isProcessing = false;
+
+    private async void Submit()
+    {
+        isProcessing = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(1000);
+            Snackbar.Add("批量操作功能开发中", Severity.Info);
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+
+        MudDialog?.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+}

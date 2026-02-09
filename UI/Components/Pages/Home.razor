@@ -1,0 +1,97 @@
+@page "/"
+
+<PageTitle>Home</PageTitle>
+
+<MudContainer Class="mt-8">
+    <MudText Typo="Typo.h3" Class="mb-4" Align="Align.Center">欢迎使用视频翻译编辑器</MudText>
+    <MudText Class="mb-8" Align="Align.Center">一个功能强大的视频编辑工具，支持字幕识别、翻译和语音合成</MudText>
+
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudCard Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">视频导入</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudIcon Icon="@Icons.Material.Filled.VideoLibrary" Size="Size.Large" Color="Color.Primary" />
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.body2">支持从本地导入视频文件或从 YouTube 直接下载视频进行编辑</MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Href="editor" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                        开始编辑
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudCard Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">字幕识别与翻译</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudIcon Icon="@Icons.Material.Filled.Translate" Size="Size.Large" Color="Color.Secondary" />
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.body2">自动识别视频中的英文字幕，并将其翻译成中文，支持批量处理</MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Href="editor" Variant="Variant.Filled" Color="Color.Secondary" FullWidth="true">
+                        开始编辑
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudCard Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">语音合成</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudIcon Icon="@Icons.Material.Filled.RecordVoiceOver" Size="Size.Large" Color="Color.Tertiary" />
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.body2">将翻译后的中文文本合成为语音，自动调整时长以匹配原视频</MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Href="editor" Variant="Variant.Filled" Color="Color.Tertiary" FullWidth="true">
+                        开始编辑
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Class="mt-8 pa-4" Elevation="2">
+        <MudText Typo="Typo.h5" Class="mb-4">主要功能</MudText>
+        <MudList T="string">
+            <MudListItem T="string" Icon="@Icons.Material.Filled.VideoLibrary">
+                <MudText Typo="Typo.body1">视频导入 - 支持本地文件和 YouTube 链接</MudText>
+            </MudListItem>
+            <MudListItem T="string" Icon="@Icons.Material.Filled.Subtitles">
+                <MudText Typo="Typo.body1">字幕识别 - 自动识别视频中的英文字幕</MudText>
+            </MudListItem>
+            <MudListItem T="string" Icon="@Icons.Material.Filled.Translate">
+                <MudText Typo="Typo.body1">字幕翻译 - 将英文字幕翻译成中文</MudText>
+            </MudListItem>
+            <MudListItem T="string" Icon="@Icons.Material.Filled.RecordVoiceOver">
+                <MudText Typo="Typo.body1">语音合成 - 将中文文本合成为语音</MudText>
+            </MudListItem>
+            <MudListItem T="string" Icon="@Icons.Material.Filled.Speed">
+                <MudText Typo="Typo.body1">时长调整 - 自动调整中文语音时长以匹配英文</MudText>
+            </MudListItem>
+            <MudListItem T="string" Icon="@Icons.Material.Filled.Movie">
+                <MudText Typo="Typo.body1">视频导出 - 合成所有轨道并导出最终视频</MudText>
+            </MudListItem>
+        </MudList>
+    </MudPaper>
+</MudContainer>

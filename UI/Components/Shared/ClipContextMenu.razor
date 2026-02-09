@@ -1,0 +1,134 @@
+@inject IVideoEditorService EditorService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@using VideoTranslator.Models
+
+<MudMenu Class="clip-context-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+    <ActivatorContent>
+        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" />
+    </ActivatorContent>
+    <ChildContent>
+        <MudMenuItem OnClick="EditClip">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" />
+            编辑
+        </MudMenuItem>
+        <MudMenuItem OnClick="DuplicateClip">
+            <MudIcon Icon="@Icons.Material.Filled.ContentCopy" Class="mr-2" />
+            复制
+        </MudMenuItem>
+        <MudMenuItem OnClick="SplitClip">
+            <MudIcon Icon="@Icons.Material.Filled.CallSplit" Class="mr-2" />
+            分割
+        </MudMenuItem>
+        <MudMenuItem OnClick="GenerateAudio">
+            <MudIcon Icon="@Icons.Material.Filled.RecordVoiceOver" Class="mr-2" />
+            生成语音
+        </MudMenuItem>
+        <MudMenuItem OnClick="TranslateClip">
+            <MudIcon Icon="@Icons.Material.Filled.Translate" Class="mr-2" />
+            翻译
+        </MudMenuItem>
+        <MudMenuItem OnClick="RecognizeSubtitle">
+            <MudIcon Icon="@Icons.Material.Filled.Subtitles" Class="mr-2" />
+            识别字幕
+        </MudMenuItem>
+        <MudDivider />
+        <MudMenuItem OnClick="DeleteClip" Class="text-error">
+            <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-2" />
+            删除
+        </MudMenuItem>
+    </ChildContent>
+</MudMenu>
+
+@code {
+    [Parameter]
+    public Clip Clip { get; set; } = new();
+
+    [Parameter]
+    public string TrackId { get; set; } = string.Empty;
+
+    private async Task EditClip()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium };
+        var parameters = new DialogParameters { ["Clip"] = Clip };
+        await DialogService.ShowAsync<ClipEditDialog>("编辑片段", parameters, options);
+    }
+
+    private void DuplicateClip()
+    {
+        var newClip = new Clip
+        {
+            Name = $"{Clip.Name} (副本)",
+            StartTime = Clip.EndTime,
+            EndTime = Clip.EndTime + Clip.Duration,
+            Content = Clip.Content,
+            Volume = Clip.Volume,
+            IsMuted = Clip.IsMuted,
+            IsVisible = Clip.IsVisible,
+            OriginalDuration = Clip.OriginalDuration,
+            AudioFilePath = Clip.AudioFilePath,
+            IsGenerated = Clip.IsGenerated,
+            TranslatedContent = Clip.TranslatedContent
+        };
+        EditorService.AddClip(TrackId, newClip);
+        Snackbar.Add("片段已复制", Severity.Success);
+    }
+
+    private void SplitClip()
+    {
+        var splitTime = Clip.StartTime + Clip.Duration / 2;
+        var clip1 = new Clip
+        {
+            Name = $"{Clip.Name} (1)",
+            StartTime = Clip.StartTime,
+            EndTime = splitTime,
+            Content = Clip.Content,
+            Volume = Clip.Volume,
+            IsMuted = Clip.IsMuted,
+            IsVisible = Clip.IsVisible,
+            OriginalDuration = Clip.OriginalDuration,
+            AudioFilePath = Clip.AudioFilePath,
+            IsGenerated = Clip.IsGenerated,
+            TranslatedContent = Clip.TranslatedContent
+        };
+        var clip2 = new Clip
+        {
+            Name = $"{Clip.Name} (2)",
+            StartTime = splitTime,
+            EndTime = Clip.EndTime,
+            Content = Clip.Content,
+            Volume = Clip.Volume,
+            IsMuted = Clip.IsMuted,
+            IsVisible = Clip.IsVisible,
+            OriginalDuration = Clip.OriginalDuration,
+            AudioFilePath = Clip.AudioFilePath,
+            IsGenerated = Clip.IsGenerated,
+            TranslatedContent = Clip.TranslatedContent
+        };
+        EditorService.RemoveClip(Clip.Id);
+        EditorService.AddClip(TrackId, clip1);
+        EditorService.AddClip(TrackId, clip2);
+        Snackbar.Add("片段已分割", Severity.Success);
+    }
+
+    private void GenerateAudio()
+    {
+        Snackbar.Add("生成语音功能开发中", Severity.Info);
+    }
+
+    private void TranslateClip()
+    {
+        Snackbar.Add("翻译功能开发中", Severity.Info);
+    }
+
+    private void RecognizeSubtitle()
+    {
+        Snackbar.Add("识别字幕功能开发中", Severity.Info);
+    }
+
+    private void DeleteClip()
+    {
+        EditorService.RemoveClip(Clip.Id);
+        Snackbar.Add("片段已删除", Severity.Success);
+    }
+}

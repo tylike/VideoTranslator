@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>文件测试</title>
+</head>
+<body>
+    <h1>文件测试</h1>
+    <h2>视频文件</h2>
+    <a href="/videos/Dh52aZ8OFFE.mp4" target="_blank">/videos/Dh52aZ8OFFE.mp4</a>
+    <br>
+    <iframe src="/videos/Dh52aZ8OFFE.mp4" width="400" height="300"></iframe>
+    
+    <h2>字幕文件</h2>
+    <a href="/subtitles/source_subtitle.srt" target="_blank">/subtitles/source_subtitle.srt</a>
+    <br>
+    <pre id="source-subtitle">加载中...</pre>
+    
+    <br>
+    <a href="/subtitles/subtitle_target.srt" target="_blank">/subtitles/subtitle_target.srt</a>
+    <br>
+    <pre id="target-subtitle">加载中...</pre>
+    
+    <script>
+        fetch('/subtitles/source_subtitle.srt')
+            .then(response => {
+                document.getElementById('source-subtitle').textContent = 
+                    `状态: ${response.status} ${response.statusText}\n` +
+                    `Content-Type: ${response.headers.get('Content-Type')}\n` +
+                    `Content-Length: ${response.headers.get('Content-Length')}\n\n` +
+                    `前500字符:\n`;
+                return response.text();
+            })
+            .then(text => {
+                document.getElementById('source-subtitle').textContent += text.substring(0, 500);
+            })
+            .catch(error => {
+                document.getElementById('source-subtitle').textContent = `错误: ${error.message}`;
+            });
+        
+        fetch('/subtitles/subtitle_target.srt')
+            .then(response => {
+                document.getElementById('target-subtitle').textContent = 
+                    `状态: ${response.status} ${response.statusText}\n` +
+                    `Content-Type: ${response.headers.get('Content-Type')}\n` +
+                    `Content-Length: ${response.headers.get('Content-Length')}\n\n` +
+                    `前500字符:\n`;
+                return response.text();
+            })
+            .then(text => {
+                document.getElementById('target-subtitle').textContent += text.substring(0, 500);
+            })
+            .catch(error => {
+                document.getElementById('target-subtitle').textContent = `错误: ${error.message}`;
+            });
+    </script>
+</body>
+</html>

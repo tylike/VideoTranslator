@@ -1,0 +1,73 @@
+<Button x:Class="TimeLine.Controls.SimpleSegmentControl"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Background="#F0F0F0"
+        BorderBrush="#CCCCCC"
+        BorderThickness="1"
+        Cursor="Hand"
+        Padding="1">
+    <Grid Name="主网格">
+        <Rectangle Name="超时背景矩形"
+                   Stretch="Fill"/>
+        <Grid Name="内容网格"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch">
+            <Image Name="波形图片"
+                   Stretch="Fill"
+                   HorizontalAlignment="Stretch"
+                   VerticalAlignment="Bottom"
+                   Visibility="Collapsed"
+                   RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+            <TextBlock Name="文本块"
+                       Foreground="#333333"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Left"
+                       TextTrimming="CharacterEllipsis"
+                       Padding="5"
+                       TextWrapping="NoWrap"
+                       FontSize="11"
+                       IsHitTestVisible="False"/>
+            <Border Name="待生成标识边框"
+                    Background="#FFF3CD"
+                    BorderBrush="#FFC107"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Padding="5,2,5,2"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Visibility="Collapsed">
+                <TextBlock Name="待生成文本块"
+                           Foreground="#856404"
+                           FontSize="10"
+                           FontWeight="Bold"
+                           Text="待生成"/>
+            </Border>
+            <Border Name="速度边框"
+                    Background="#FFF0F0"
+                    CornerRadius="3"
+                    Padding="5,2,5,2"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top">
+                <TextBlock Name="速度文本块"
+                           Foreground="#FF6600"
+                           FontSize="10"
+                           FontWeight="Bold"/>
+            </Border>
+            <Border Name="负数宽度标识边框"
+                    Background="#FF0000"
+                    BorderBrush="#FF0000"
+                    BorderThickness="2"
+                    CornerRadius="3"
+                    Padding="5,2,5,2"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Visibility="Collapsed">
+                <TextBlock Name="负数宽度文本块"
+                           Foreground="#FFFFFF"
+                           FontSize="10"
+                           FontWeight="Bold"
+                           Text="时间异常"/>
+            </Border>
+        </Grid>
+    </Grid>
+</Button>

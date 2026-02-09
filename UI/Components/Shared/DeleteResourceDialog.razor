@@ -1,0 +1,29 @@
+@using MudBlazor
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudText>确定要删除资源 "@_resourceName" 吗？此操作无法撤销。</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">取消</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Confirm">删除</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance? MudDialog { get; set; }
+    [Parameter] public string ResourceName { get; set; } = string.Empty;
+    private string _resourceName => ResourceName;
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+
+    private void Confirm()
+    {
+        MudDialog?.Close(DialogResult.Ok(true));
+    }
+}

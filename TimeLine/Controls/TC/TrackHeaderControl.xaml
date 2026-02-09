@@ -1,0 +1,76 @@
+<ContentControl x:Class="TimeLine.Controls.TrackHeaderControl"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                HorizontalAlignment="Stretch">
+    <Border Name="边框"
+            Background="White"
+            BorderBrush="#CCCCCC"
+            BorderThickness="0,0,0,1"
+            Padding="10,5,10,5"
+            VerticalAlignment="Stretch"
+            HorizontalAlignment="Stretch">
+        <Grid Name="主网格"
+              VerticalAlignment="Stretch">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Name="标题文本块"
+                       Grid.Column="0"
+                       VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis"
+                       FontWeight="Medium"/>
+            <TextBlock Name="错误图标"
+                       Grid.Column="1"
+                       Width="20"
+                       Height="20"
+                       Margin="5,0,0,0"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Text="⚠"
+                       FontSize="16"
+                       Foreground="#FF6B6B"
+                       Visibility="Collapsed"
+                       ToolTip="{Binding ErrorMessage, RelativeSource={RelativeSource AncestorType=ContentControl}}"/>
+            <Button Name="编辑按钮"
+                    Grid.Column="2"
+                    Width="24"
+                    Height="24"
+                    Margin="5,0,0,0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Padding="0"
+                    Click="OnEditButtonClick"
+                    ToolTip="编辑片段">
+                <TextBlock Name="编辑按钮文本块"
+                           Text="✎"
+                           FontSize="14"
+                           Foreground="#666666"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"/>
+            </Button>
+            <Button Name="菜单按钮"
+                    Grid.Column="3"
+                    Width="24"
+                    Height="24"
+                    Margin="5,0,0,0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Padding="0"
+                    Click="OnMenuButtonClick">
+                <TextBlock Name="按钮文本块"
+                           Text="⋮"
+                           FontSize="16"
+                           Foreground="#666666"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"/>
+            </Button>
+        </Grid>
+    </Border>
+</ContentControl>

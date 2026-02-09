@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application Logo="ExpressAppLogo">
+  <NavigationItems NavigationStyle="Accordion" DefaultChildItemsDisplayStyle="List" />
+  <Options UIType="TabbedMDI" FormStyle="Ribbon" Skin="WXI Compact">
+    <RibbonOptions RibbonControlStyle="Office365" />
+  </Options>
+  <SchemaModules>
+    <SchemaModule Name="CloneObjectModule" Version="25.1.4.0" IsNewNode="True" />
+    <SchemaModule Name="SystemModule" Version="25.1.4.0" IsNewNode="True" />
+    <SchemaModule Name="SystemWindowsFormsModule" Version="25.1.4.0" IsNewNode="True" />
+  </SchemaModules>
+  <Views>
+    <DetailView Id="VideoProject_DetailView">
+      <Layout>
+        <LayoutGroup Id="Main" RelativeSize="100">
+          <TabbedGroup Id="Tabs" CaptionLocation="Left" Index="0" RelativeSize="96.00499375780275">
+            <LayoutGroup Id="Clips" Index="0" ShowCaption="True" TextAlignMode="AlignWithChildren" RelativeSize="100" IsNewNode="True" Removed="True">
+              <LayoutItem Id="Player" ViewItem="Player" Index="0" ShowCaption="False" CaptionLocation="Top" RelativeSize="50" IsNewNode="True" />
+              <SplitterItem Id="SPLITER" Index="1" RelativeSize="1.5894039735099337" IsNewNode="True" />
+              <LayoutItem Id="Clips" ViewItem="Clips" ShowCaption="False" Index="2" RelativeSize="94.17218543046357" IsNewNode="True" />
+            </LayoutGroup>
+            <LayoutGroup Id="MediaSources" Index="1" TextAlignMode="AlignWithChildren" RelativeSize="100">
+              <LayoutItem Id="MediaSources" TextAlignMode="AutoSize" RelativeSize="100" />
+            </LayoutGroup>
+            <LayoutGroup Id="YouTubeVideos" Index="2" TextAlignMode="AlignWithChildren" RelativeSize="100">
+              <LayoutItem Id="YouTubeVideos" TextAlignMode="AutoSize" RelativeSize="100" />
+            </LayoutGroup>
+            <LayoutGroup Id="信息" ShowCaption="True" Index="3" RelativeSize="100">
+              <LayoutGroup Id="SimpleEditors" RelativeSize="49.93377483443709">
+                <LayoutGroup Id="VideoProject" RelativeSize="33.15649867374005">
+                  <LayoutItem Id="ProjectName" RelativeSize="32.8" />
+                  <LayoutItem Id="ProjectPath" RelativeSize="32.8" />
+                  <LayoutItem Id="CurrentStatus" RelativeSize="34.4" />
+                </LayoutGroup>
+                <LayoutGroup Id="VTBaseObject" RelativeSize="33.15649867374005">
+                  <LayoutItem Id="CreateTime" RelativeSize="49.6" />
+                  <LayoutItem Id="LastUpdateTime" RelativeSize="50.4" />
+                </LayoutGroup>
+                <LayoutGroup Id="XPObject" RelativeSize="33.687002652519894">
+                  <LayoutItem Id="Oid" RelativeSize="100" />
+                </LayoutGroup>
+              </LayoutGroup>
+              <LayoutGroup Id="SizeableEditors" RelativeSize="50.06622516556291">
+                <LayoutItem Id="SourceVideoPath" RelativeSize="12.16931216931217" />
+                <LayoutItem Id="SourceAudioPath" RelativeSize="12.433862433862434" />
+                <LayoutItem Id="SourceSubtitlePath" RelativeSize="12.16931216931217" />
+                <LayoutItem Id="TranslatedSubtitlePath" RelativeSize="12.433862433862434" />
+                <LayoutItem Id="OutputAudioPath" RelativeSize="12.16931216931217" />
+                <LayoutItem Id="OutputVideoPath" RelativeSize="12.433862433862434" />
+                <LayoutItem Id="ProgressMessage" RelativeSize="12.16931216931217" />
+                <LayoutItem Id="LastOutput" RelativeSize="14.02116402116402" />
+              </LayoutGroup>
+            </LayoutGroup>
+          </TabbedGroup>
+          <LayoutItem Id="ProgressPercentage" Index="1" RelativeSize="3.9950062421972534" />
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
+  </Views>
+</Application>

@@ -1,0 +1,228 @@
+@inject ISnackbar Snackbar
+@inject IHttpClientFactory HttpClientFactory
+@inject IProjectManagerService ProjectManagerService
+@inject IVideoEditorService VideoEditorService
+@using MudBlazor
+@using MudBlazor.Extensions
+@using Microsoft.AspNetCore.Components.Forms
+@using VideoTranslator.Models
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">导入视频</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Class="mb-4">选择要导入的视频文件</MudText>
+        <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudText Typo="Typo.body2" Class="mb-2">支持的格式: MP4, AVI, MOV, MKV, WMV</MudText>
+            <MudText Typo="Typo.body2">最大文件大小: 2GB</MudText>
+        </MudPaper>
+        
+        @if (_isUploading)
+        {
+            <div class="d-flex flex-column align-center justify-center py-4">
+                <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+                <MudText Class="mt-2">正在上传...</MudText>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-column gap-4">
+                <InputFile OnChange="HandleFilesChanged" accept=".mp4,.avi,.mov,.mkv,.wmv" class="mud-input mud-input-outlined mud-input-adorned-end mud-input-textfield">
+                    <input class="mud-input-slot mud-input-root-input" />
+                </InputFile>
+                
+                @if (_selectedFile != null)
+                {
+                    <MudPaper Class="pa-3" Elevation="0">
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@Icons.Material.Filled.VideoFile" Color="Color.Primary" />
+                            <div class="flex-grow-1">
+                                <MudText Typo="Typo.body1">@_selectedFile.Name</MudText>
+                                <MudText Typo="Typo.caption">@FormatFileSize(_selectedFile.Size)</MudText>
+                            </div>
+                        </div>
+                    </MudPaper>
+                }
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_isUploading">取消</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit" Disabled="_isUploading || _selectedFile == null">导入</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .mud-input-slot {
+        cursor: pointer;
+        padding: 12px 16px;
+        border: 1px solid var(--mud-palette-action-disabled);
+        border-radius: 4px;
+        background-color: var(--mud-palette-surface);
+    }
+    .mud-input-slot:hover {
+        background-color: var(--mud-palette-action-hover);
+        border-color: var(--mud-palette-primary);
+    }
+</style>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance? MudDialog { get; set; }
+    [Parameter]
+    public string ProjectId { get; set; } = string.Empty;
+    
+    private IBrowserFile? _selectedFile;
+    private bool _isUploading;
+
+    private void HandleFilesChanged(InputFileChangeEventArgs e)
+    {
+        _selectedFile = e.File;
+        StateHasChanged();
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private async Task Submit()
+    {
+        if (_selectedFile == null)
+        {
+            Snackbar.Add("请选择文件", Severity.Warning);
+            return;
+        }
+
+        Console.WriteLine($"开始上传视频 - ProjectId: '{ProjectId}'");
+        if (string.IsNullOrEmpty(ProjectId))
+        {
+            Snackbar.Add("项目ID不能为空", Severity.Error);
+            return;
+        }
+
+        _isUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            var httpClient = HttpClientFactory.CreateClient("UploadClient");
+            var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(_selectedFile.OpenReadStream(2L * 1024 * 1024 * 1024));
+            content.Add(fileContent, "file", _selectedFile.Name);
+            content.Add(new StringContent(ProjectId), "projectId");
+
+            Console.WriteLine($"正在上传到: {httpClient.BaseAddress}/api/upload/video");
+            var response = await httpClient.PostAsync("/api/upload/video", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"视频导入成功，正在检查是否需要添加到轨道");
+                
+                var project = await ProjectManagerService.GetProjectAsync(ProjectId);
+                if (project != null)
+                {
+                    var resource = project.GetResourceByFilePath(project.SourceVideoPath ?? string.Empty);
+                    
+                    if (resource != null)
+                    {
+                        var isFirstVideo = project.Resources.Count(r => r.Type == ResourceType.Video) == 1;
+                        if (isFirstVideo)
+                        {
+                            Console.WriteLine($"这是第一个视频，自动添加到轨道");
+                            
+                            var videoTrack = project.Tracks.FirstOrDefault(t => t.Type == TrackType.Video);
+                            if (videoTrack == null)
+                            {
+                                videoTrack = new Track
+                                {
+                                    Name = "视频轨道 1",
+                                    Type = TrackType.Video,
+                                    Order = 0
+                                };
+                                project.Tracks.Add(videoTrack);
+                                Console.WriteLine($"创建新视频轨道: {videoTrack.Name}");
+                            }
+                            
+                            double clipDuration = 10;
+                            try
+                            {
+                                var videoDuration = await VideoEditorService.GetVideoDurationAsync(project.SourceVideoPath ?? string.Empty);
+                                if (videoDuration > 0)
+                                {
+                                    clipDuration = videoDuration;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"获取视频时长失败: {ex.Message}");
+                            }
+                            
+                            var clip = new Clip
+                            {
+                                Name = _selectedFile.Name,
+                                FilePath = project.SourceVideoPath ?? string.Empty,
+                                StartTime = 0,
+                                EndTime = clipDuration,
+                                IsGenerated = false
+                            };
+                            
+                            videoTrack.Clips.Add(clip);
+                            resource.IsUsed = true;
+                            Console.WriteLine($"视频已添加到轨道: {clip.Name}");
+                            
+                            await ProjectManagerService.UpdateProjectAsync(project);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"这不是第一个视频，不自动添加到轨道");
+                        }
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine($"无法找到资源: {project.SourceVideoPath}");
+                    }
+                }
+                else
+                {
+                    Console.Error.WriteLine($"无法找到项目: {ProjectId}");
+                }
+                
+                Snackbar.Add("视频导入成功", Severity.Success);
+                MudDialog?.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Console.Error.WriteLine($"视频导入失败 - HTTP状态码: {response.StatusCode}");
+                Console.Error.WriteLine($"响应内容: {responseContent}");
+                Snackbar.Add($"导入失败: {responseContent}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"视频导入失败: {ex.Message}");
+            Console.Error.WriteLine($"堆栈跟踪: {ex.StackTrace}");
+            Snackbar.Add($"导入失败: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+}

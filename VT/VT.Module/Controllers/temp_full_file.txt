@@ -1,0 +1,1109 @@
+using DevExpress.ExpressApp;
+using DevExpress.ExpressApp.Actions;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using VideoTranslator.Interfaces;
+using VideoTranslator.Models;
+using VideoTranslator.Services;
+using VT.Module.Controllers;
+
+namespace VT.Module.BusinessObjects;
+
+public class VideoProjectViewController : VideoProjectController
+{
+    #region services
+    ISpeechRecognitionService SpeechRecognitionService => ServiceProvider.GetRequiredService<ISpeechRecognitionService>();
+    IFFmpegService FfmpegService => ServiceProvider.GetRequiredService<IFFmpegService>();
+    ISubtitleService SubtitleService => ServiceProvider.GetRequiredService<ISubtitleService>();
+    IAudioService AudioService => ServiceProvider.GetRequiredService<IAudioService>();
+    IAudioSeparationService AudioSeparationService => ServiceProvider.GetRequiredService<IAudioSeparationService>();
+    ITranslationService TranslationService => ServiceProvider.GetRequiredService<ITranslationService>();
+    LMStudioTranslationService LmStudioTranslationService => ServiceProvider.GetRequiredService<LMStudioTranslationService>();
+    ITTSService ttsService => ServiceProvider.GetRequiredService<ITTSService>();
+    IVideoEditorService VideoEditorService => ServiceProvider.GetRequiredService<IVideoEditorService>();
+    #endregion
+
+    public VideoProjectViewController()
+    {
+        var extractAudio = new SimpleAction(this, "ExtractAudio", null);
+        extractAudio.Caption = "1.提取音频";
+        extractAudio.Execute += ExtractAudio_Execute;
+
+        var parseSourceSRT = new SimpleAction(this, "ParseSourceSRT", null);
+        parseSourceSRT.Caption = "2.解析源字幕";
+        parseSourceSRT.Execute += ParseSourceSRT_Execute;
+
+        var segmentSourceSRT = new SimpleAction(this, "SegmentSourceSRT", null);
+        segmentSourceSRT.Caption = "3.源音频字幕分段";
+        segmentSourceSRT.Execute += SegmentSourceSRT_Execute;
+
+        var separateAudio = new SimpleAction(this, "SeparateAudio", null);
+        separateAudio.Caption = "2.5.分离人声和背景音";
+        separateAudio.Execute += SeparateAudio_Execute;
+
+        var translateSRT = new SimpleAction(this, "TranslateSRT", null);
+        translateSRT.Caption = "4.翻译字幕";
+        translateSRT.Execute += TranslateSRT_Execute;
+
+        var generateTTS = new SimpleAction(this, "GenerateTTS", null);
+        generateTTS.Caption = "5.TTS";
+        generateTTS.Execute += GenerateTTS_Execute;
+
+        var regenerateTTS = new SimpleAction(this, "RegenerateTTS", null);
+        regenerateTTS.Caption = "5.1.重新TTS";
+        regenerateTTS.Execute += RegenerateTTS_Execute;
+
+        var adjustAudioSegments = new SimpleAction(this, "AdjustAudioSegments", null);
+        adjustAudioSegments.Caption = "6.调整音频片段";
+        adjustAudioSegments.Execute += AdjustAudioSegments_Execute;
+
+        var overlayAudio = new SimpleAction(this, "OverlayAudio", null);
+        overlayAudio.Caption = "7.合并音频";
+        overlayAudio.Execute += OverlayAudio_Execute;
+
+        var mergeVideo = new SimpleAction(this, "MergeVideo", null);
+        mergeVideo.Caption = "8.合并视频";
+        mergeVideo.Execute += MergeVideo_Execute;
+
+        var addSubtitles = new SimpleAction(this, "AddSubtitles", null);
+        addSubtitles.Caption = "9.添加字幕";
+        addSubtitles.Execute += AddSubtitles_Execute;
+
+        var mergeVideoAndSubtitles = new SimpleAction(this, "MergeVideoAndSubtitles", null);
+        mergeVideoAndSubtitles.Caption = "10.生成最终视频";
+        mergeVideoAndSubtitles.Execute += MergeVideoAndSubtitles_Execute;
+
+        var playOutputAudio = new SimpleAction(this, "PlayOutputAudio", null);
+        playOutputAudio.Caption = "播放合成音频";
+        playOutputAudio.Execute += PlayOutputAudio_Execute;
+
+        var playOutputVideo = new SimpleAction(this, "PlayOutputVideo", null);
+        playOutputVideo.Caption = "播放合成视频";
+        playOutputVideo.Execute += PlayOutputVideo_Execute;
+    }
+
+    #region utils
+    private async Task ExecuteActionAsync(SimpleAction action, VideoProject videoProject, string startMessage, Func<Task> actionTask)
+    {
+        try
+        {
+            action.Enabled["Processing"] = false;
+            videoProject.SetProcessing(startMessage);
+            ObjectSpace.CommitChanges();
+
+            await actionTask();
+        }
+        catch (Exception ex)
+        {
+            InvokeOnUIThread(() =>
+            {
+                videoProject.SetError(ex.Message);
+                ObjectSpace.CommitChanges();
+            });
+            throw new UserFriendlyException($"操作失败: {ex.Message}");
+        }
+        finally
+        {
+            InvokeOnUIThread(() =>
+            {
+                action.Enabled["Processing"] = true;
+            });
+        }
+    }
+
+    private void UpdateProgressAndCommit(string message, int count = 0, int total = 0)
+    {
+        InvokeOnUIThread(() =>
+        {
+            var videoProject = GetCurrentVideoProjectOrReturnNull();
+            if (videoProject == null) return;
+
+            if (total > 0)
+            {
+                videoProject.UpdateProgress($"{message} ({count}/{total})");
+            }
+            else
+            {
+                videoProject.UpdateProgress(message);
+            }
+            ObjectSpace.CommitChanges();
+        });
+    }
+
+    private async Task ExecuteFFmpegCommandAsync(VideoProject videoProject, string args)
+    {
+        await FfmpegService.ExecuteCommandAsync(args, output =>
+        {
+            InvokeOnUIThread(() =>
+            {
+                videoProject.AppendOutput(output);
+                videoProject.UpdateProgress($"处理中: {output}");
+                ObjectSpace.CommitChanges();
+            });
+        });
+    }
+
+    private VideoProject GetCurrentVideoProject()
+    {
+        var videoProject = View.CurrentObject as VideoProject;
+        if (videoProject == null)
+        {
+            throw new UserFriendlyException("未选择视频项目");
+        }
+        return videoProject;
+    }
+
+    private VideoProject GetCurrentVideoProjectOrReturnNull()
+    {
+        return ViewCurrentObject;
+    }
+
+    private void ValidateFileExists(string path, string errorMessage)
+    {
+        if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            throw new UserFriendlyException(errorMessage);
+    }
+
+    private void LogOperationStart(string operation, params (string name, object value)[] parameters)
+    {
+        Debug.WriteLine($"[VideoProjectViewController] 开始{operation}...");
+        foreach (var (name, value) in parameters)
+        {
+            Debug.WriteLine($"  {name}: {value}");
+        }
+    }
+
+    private void LogOperationComplete(string operation, params (string name, object value)[] results)
+    {
+        Debug.WriteLine($"[VideoProjectViewController] {operation}完成...");
+        foreach (var (name, value) in results)
+        {
+            Debug.WriteLine($"  {name}: {value}");
+        }
+    }
+
+    private void LogOperationProgress(string message)
+    {
+        Debug.WriteLine($"[VideoProjectViewController] 进度: {message}");
+    }
+    #endregion
+
+    private async void ExtractAudio_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var action = sender as SimpleAction;
+        if (action == null) return;
+
+        var videoProject = GetCurrentVideoProject();
+
+        videoProject.ValidateSourceVideo();
+
+        var audioPath = Path.Combine(videoProject.ProjectPath, "source_audio.wav");
+
+        await ExecuteActionAsync(action, videoProject, "开始提取音频", async () =>
+        {
+            var args = $"-i \"{videoProject.SourceVideoPath}\" -vn -acodec pcm_s16le -ar 44100 -ac 2 -y \"{audioPath}\"";
+            await ExecuteFFmpegCommandAsync(videoProject, args);
+
+            videoProject.SourceAudioPath = audioPath;
+            videoProject.SetCompleted("音频提取成功");
+            ObjectSpace.CommitChanges();
+
+            Application.ShowViewStrategy.ShowMessage($"音频提取成功: {audioPath}");
+        });
+    }
+
+    private async void SeparateAudio_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var action = sender as SimpleAction;
+        if (action == null) return;
+
+        var videoProject = GetCurrentVideoProject();
+        videoProject.ValidateSourceAudio().Validate();
+
+        await ExecuteActionAsync(action, videoProject, "开始分离人声和背景音", async () =>
+        {
+            if (string.IsNullOrEmpty(videoProject.SourceAudioPath))
+            {
+                throw new UserFriendlyException("请先提取或设置源音频文件");
+            }
+
+            var audioTestDir = Path.Combine(videoProject.ProjectPath, "audio_test");
+            Directory.CreateDirectory(audioTestDir);
+
+            LogOperationStart("分离人声和背景音",
+                ("源音频文件", videoProject.SourceAudioPath),
+                ("输出目录", audioTestDir));
+
+            var progress = new Progress<string>(message =>
+            {
+                videoProject.UpdateProgress(message);
+                LogOperationProgress(message);
+            });
+
+            var result = await AudioSeparationService.SeparateVocalAndBackgroundAsync(
+                videoProject.SourceAudioPath,
+                audioTestDir,
+                progress);
+
+            if (!result.Success)
+            {
+                throw new UserFriendlyException($"音频分离失败: {result.ErrorMessage}");
+            }
+
+            videoProject.SourceVocalAudioPath = result.VocalAudioPath;
+            videoProject.SourceBackgroundAudioPath = result.BackgroundAudioPath;
+
+            videoProject.SetCompleted($"音频分离成功！处理时间: {result.ProcessingTime.TotalSeconds:F1}秒");
+            ObjectSpace.CommitChanges();
+
+            LogOperationComplete("音频分离完成",
+                ("人声音频", result.VocalAudioPath),
+                ("背景音频", result.BackgroundAudioPath));
+
+            Application.ShowViewStrategy.ShowMessage($"音频分离成功！\n人声: {result.VocalAudioPath}\n背景: {result.BackgroundAudioPath}");
+        });
+    }
+
+    private async void ParseSourceSRT_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var action = sender as SimpleAction;
+        if (action == null) return;
+
+        var videoProject = GetCurrentVideoProject();
+        videoProject.ValidateSourceAudio().Validate();
+        var subtitlePath = Path.Combine(videoProject.ProjectPath, "source_subtitle.srt");
+
+        await ExecuteActionAsync(action, videoProject, "开始识别字幕", async () =>
+        {
+            LogOperationStart("识别字幕",
+                ("源音频文件", videoProject.SourceAudioPath),
+                ("输出字幕文件", subtitlePath));
+
+            await SpeechRecognitionService.RecognizeAudioAsync(videoProject.SourceAudioPath, subtitlePath, "en");
+
+            videoProject.SourceSubtitlePath = subtitlePath;
+            videoProject.SetCompleted("字幕识别成功");
+            ObjectSpace.CommitChanges();
+
+            LogOperationComplete("字幕识别完成");
+
+            Application.ShowViewStrategy.ShowMessage($"字幕识别成功: {subtitlePath}");
+        });
+    }
+
+    private async void SegmentSourceSRT_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var action = sender as SimpleAction;
+        if (action == null) return;
+
+        var videoProject = GetCurrentVideoProject();
+        videoProject.ValidateSourceSubtitle().Validate();
+        videoProject.ValidateSourceAudio().Validate();
+
+        await ExecuteActionAsync(action, videoProject, "开始分段", async () =>
+        {
+            var subtitles = await SubtitleService.ParseSrtAsync(videoProject.SourceSubtitlePath);
+
+            if (subtitles.Count == 0)
+            {
+                throw new UserFriendlyException("字幕文件为空或格式不正确");
+            }
+
+            var audioSegmentsDir = Path.Combine(videoProject.ProjectPath, "audio_segments");
+
+            var vocalAudioPath = videoProject.SourceVocalAudioPath;
+            var audioPathForSegmentation = videoProject.SourceAudioPath;
+            
+            if (!string.IsNullOrEmpty(vocalAudioPath) && File.Exists(vocalAudioPath))
+            {
+                audioPathForSegmentation = vocalAudioPath;
+                LogOperationStart("使用分离的人声音频进行分段");
+            }
+            else
+            {
+                LogOperationStart("警告: 未找到分离的人声音频，使用原始音频进行分段");
+            }
+
+            LogOperationStart("分段音频和字幕",
+                ("字幕数量", subtitles.Count),
+                ("音频文件", audioPathForSegmentation),
+                ("音频分段输出目录", audioSegmentsDir));
+
+            UpdateProgressAndCommit($"正在分段，共 {subtitles.Count} 个字幕");
+
+            await AudioService.SegmentAudioBySubtitleSinglePassAsync(
+                audioPathForSegmentation,
+                subtitles,
+                audioSegmentsDir);
+
+            LogOperationComplete("音频分段完成");
+
+            UpdateProgressAndCommit("正在创建片段对象...");
+
+            var index = 0;
+            foreach (var subtitle in subtitles)
+            {
+                var timeLineClip = ObjectSpace.CreateObject<TimeLineClip>();
+                timeLineClip.VideoProject = videoProject;
+                timeLineClip.Index = index;
+
+                var srtClip = ObjectSpace.CreateObject<SRTClip>();
+                srtClip.Index = subtitle.Index;
+                srtClip.Start = TimeSpan.FromSeconds(subtitle.StartSeconds);
+                srtClip.End = TimeSpan.FromSeconds(subtitle.EndSeconds);
+                srtClip.Text = subtitle.Text;
+                srtClip.Type = MediaType.Subtitles;
+
+                timeLineClip.SourceSRTClip = srtClip;
+
+                var audioSegmentPath = Path.Combine(audioSegmentsDir, $"segment_{subtitle.Index:0000}.wav");
+                if (File.Exists(audioSegmentPath))
+                {
+                    var audioClip = ObjectSpace.CreateObject<AudioClip>();
+                    audioClip.Index = subtitle.Index;
+                    audioClip.Start = TimeSpan.FromSeconds(subtitle.StartSeconds);
+                    audioClip.End = TimeSpan.FromSeconds(subtitle.EndSeconds);
+                    audioClip.Type = MediaType.Audio;
+                    audioClip.SetAudioFile(audioSegmentPath);
+
+                    timeLineClip.SourceAudioClip = audioClip;
+                }
+
+                videoProject.Clips.Add(timeLineClip);
+                index++;
+
+                if (index % 10 == 0)
+                {
+                    videoProject.UpdateProgress($"已创建 {index}/{subtitles.Count} 个片段");
+                    ObjectSpace.CommitChanges();
+                }
+            }
+
+            LogOperationComplete("创建片段对象",
+                ("片段数量", subtitles.Count));
+
+            videoProject.SetCompleted($"成功创建 {subtitles.Count} 个片段");
+            ObjectSpace.CommitChanges();
+
+            Application.ShowViewStrategy.ShowMessage($"字幕分段成功，共创建 {subtitles.Count} 个片段（包含 SRT 和音频）");
+        });
+    }
+
+    private async void TranslateSRT_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var action = sender as SimpleAction;
+        if (action == null) return;
+
+        var videoProject = GetCurrentVideoProject();
+        videoProject.ValidateSourceSubtitle().Validate();
+
+        await ExecuteActionAsync(action, videoProject, "开始翻译", async () =>
+        {
+            var translatedSubtitlePath = Path.Combine(videoProject.ProjectPath, "source_subtitle_zh.srt");
+            LogOperationStart("翻译字幕",
+                ("源字幕文件", videoProject.SourceSubtitlePath),
+                ("目标字幕文件", translatedSubtitlePath));
+
+            var sourceSubtitles = await SubtitleService.ParseSrtAsync(videoProject.SourceSubtitlePath);
+            var totalSubtitles = sourceSubtitles.Count;
+
+            UpdateProgressAndCommit("正在翻译...");
+
+            List<Subtitle> allTranslatedSubtitles = new();
+            int processedCount = 0;
+
+            await TranslationService.TranslateSubtitlesAsync(
+                sourceSubtitles,
+                TranslationApi.LMStudio,
+                onBatchComplete: async (currentBatch, totalBatches, batchResults) =>
+                {
+                    allTranslatedSubtitles.AddRange(batchResults);
+                    processedCount = allTranslatedSubtitles.Count;
+
+                    var progressPercent = (int)((double)processedCount / totalSubtitles * 100);
+                    var progressMessage = $"翻译中... [{processedCount}/{totalSubtitles} 条] {progressPercent}%";
+                    UpdateProgressAndCommit(progressMessage);
+
+                    var updatedCount = UpdateClipsInCurrentBatch(videoProject, batchResults);
+                    ObjectSpace.CommitChanges();
+
+                    var batchMessage = $"批次 {currentBatch}/{totalBatches} 完成，更新了 {updatedCount} 条字幕";
+                    Debug.WriteLine(batchMessage);
+                    Application.ShowViewStrategy.ShowMessage(batchMessage);
+                });
+
+            await SubtitleService.SaveSrtAsync(allTranslatedSubtitles, translatedSubtitlePath);
+
+            videoProject.TranslatedSubtitlePath = translatedSubtitlePath;
+
+            LogOperationComplete("翻译完成",
+                (name: "总字幕数", value: totalSubtitles),
+                (name: "已翻译", value: allTranslatedSubtitles.Count));
+
+            var finalCount = videoProject.Clips.Count(c => c.TargetSRTClip != null);
+            videoProject.SetCompleted($"翻译成功，已更新 {finalCount} 个字幕");
+            ObjectSpace.CommitChanges();
+
+            Application.ShowViewStrategy.ShowMessage($"字幕翻译成功: {translatedSubtitlePath}，已更新 {finalCount} 个 TargetSRTClip");
+        });
+    }
+
+    private int UpdateClipsInCurrentBatch(VideoProject videoProject, List<Subtitle> batchResults)
+    {
+        var updatedCount = 0;
+        foreach (var clip in videoProject.Clips)
+        {
+            if (clip.SourceSRTClip != null)
+            {
+                var subtitle = batchResults.FirstOrDefault(s => s.Index == clip.SourceSRTClip.Index);
+                if (subtitle != null)
+                {
+                    if (clip.TargetSRTClip == null)
+                    {
+                        var targetSRTClip = ObjectSpace.CreateObject<SRTClip>();
+                        targetSRTClip.Index = subtitle.Index;
+                        targetSRTClip.Start = TimeSpan.FromSeconds(subtitle.StartSeconds);
+                        targetSRTClip.End = TimeSpan.FromSeconds(subtitle.EndSeconds);
+                        targetSRTClip.Text = subtitle.Text;
+                        clip.TargetSRTClip = targetSRTClip;
+                    }
+                    else
+                    {
+                        clip.TargetSRTClip.Index = subtitle.Index;
+                        clip.TargetSRTClip.Start = TimeSpan.FromSeconds(subtitle.StartSeconds);
+                        clip.TargetSRTClip.End = TimeSpan.FromSeconds(subtitle.EndSeconds);
+                        clip.TargetSRTClip.Text = subtitle.Text;
+                    }
+                    updatedCount++;
+                }
+            }
+        }
+        return updatedCount;
+    }
+
+    private async void GenerateTTS_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var action = sender as SimpleAction;
+        if (action == null) return;
+
+        var videoProject = GetCurrentVideoProject();
+        videoProject.ValidateTranslatedSubtitle().Validate();
+
+        await ExecuteActionAsync(action, videoProject, "开始生成 TTS", async () =>
+        {
+            LogOperationStart("生成 TTS 音频",
+                ("翻译字幕文件", videoProject.TranslatedSubtitlePath));
+
+            var audioSegmentsDir = Path.Combine(videoProject.ProjectPath, "audio_segments");
+            var ttsSegmentsDir = Path.Combine(videoProject.ProjectPath, "tts_segments");
+
+            LogOperationStart("生成 TTS 音频",
+                ("源音频分段目录", audioSegmentsDir),
+                ("TTS 输出目录", ttsSegmentsDir));
+
+            var ttsUrls = new List<string>
+            {
+                "http://192.168.1.154:8000/generate",
+                "http://192.168.1.154:8001/generate",
+                "http://192.168.1.154:8002/generate",
+                "http://192.168.1.154:8003/generate",
+                "http://192.168.1.154:8004/generate"
+            };
+
+            var completedSegments = new List<TTSSegment>();
+            var updateLock = new object();
+            var processedIndices = new HashSet<int>();
+
+            ttsService.SetOnSegmentCompleted((current, total, segment) =>
+            {
+                lock (updateLock)
+                {
+                    if (!processedIndices.Contains(segment.Index))
+                    {
+                        processedIndices.Add(segment.Index);
+                        completedSegments.Add(segment);
+                    }
+                }
+
+                InvokeOnUIThread(() =>
+                {
+                    UpdateSingleClipAsync(videoProject, segment).ConfigureAwait(false);
+                    UpdateProgressAndCommit($"正在生成 TTS... ({current}/{total})");
+                });
+            });
+
+            UpdateProgressAndCommit("正在调用 TTS 服务...");
+
+            var allSegments = await ttsService.GenerateTTSFromSrtAsyncParallel(
+                videoProject.TranslatedSubtitlePath,
+                audioSegmentsDir,
+                ttsSegmentsDir,
+                ttsUrls,
+                "0",
+                cleanOld: false,
+                limit: -1);
+
+            ttsService.SetOnSegmentCompleted(null);
+
+            var finalSegments = allSegments.Where(s => !completedSegments.Contains(s)).ToList();
+            if (finalSegments.Count > 0)
+            {
+                UpdateProgressAndCommit($"正在更新剩余片段... ({finalSegments.Count} 个)");
+                foreach (var segment in finalSegments)
+                {
+                    await UpdateSingleClipAsync(videoProject, segment);
+                }
+            }
+
+            var ttsSegments = completedSegments.Concat(finalSegments).ToList();
+
+            LogOperationComplete("TTS 生成",
+                ("音频片段数量", ttsSegments.Count));
+
+            LogOperationStart("更新 clips 中的 TargetAudioClip");
+
+            var updatedCount = videoProject.Clips.Count(clip => clip.TargetAudioClip != null);
+            var errorCount = videoProject.Clips.Count(clip => clip.SourceSRTClip != null && clip.TargetAudioClip == null);
+
+            if (errorCount > 0)
+            {
+                foreach (var clip in videoProject.Clips.Where(c => c.SourceSRTClip != null && c.TargetAudioClip == null))
+                {
+                    clip.SetError("生成失败");
+                }
+            }
+
+            LogOperationComplete("更新 TargetAudioClip",
+                ("更新数量", updatedCount),
+                ("失败数量", errorCount));
+
+            videoProject.SetCompleted($"TTS 生成成功，共生成 {ttsSegments.Count} 个音频片段");
+            ObjectSpace.CommitChanges();
+
+            Application.ShowViewStrategy.ShowMessage($"TTS 生成成功，共生成 {ttsSegments.Count} 个音频片段");
+        });
+    }
+
+    private async Task UpdateSingleClipAsync(VideoProject videoProject, TTSSegment segment)
+    {
+        var clip = videoProject.Clips.FirstOrDefault(c => c.SourceSRTClip != null && c.SourceSRTClip.Index == segment.Index);
+        if (clip != null)
+        {
+            var targetAudioClip = ObjectSpace.CreateObject<AudioClip>();
+            targetAudioClip.Index = segment.Index;
+            targetAudioClip.Start = TimeSpan.FromSeconds(segment.Start);
+            targetAudioClip.End = TimeSpan.FromSeconds(segment.End);
+            targetAudioClip.Type = MediaType.Audio;
+            targetAudioClip.SetAudioFile(segment.AudioPath);
+
+            clip.TargetAudioClip = targetAudioClip;
+            clip.SetCompleted();
+            ObjectSpace.CommitChanges();
+            Debug.WriteLine($"  实时更新: {segment.AudioPath}");
+        }
+    }
+
+    private async void RegenerateTTS_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var action = sender as SimpleAction;
+        if (action == null) return;
+
+        var videoProject = GetCurrentVideoProject();
+        videoProject.ValidateTranslatedSubtitle().Validate();
+
+        await ExecuteActionAsync(action, videoProject, "重新生成 TTS", async () =>
+        {
+            LogOperationStart("重新生成 TTS 音频",
+                ("翻译字幕文件", videoProject.TranslatedSubtitlePath));
+
+            var audioSegmentsDir = Path.Combine(videoProject.ProjectPath, "audio_segments");
+            var ttsSegmentsDir = Path.Combine(videoProject.ProjectPath, "tts_segments");
+
+            LogOperationStart("重新生成 TTS 音频",
+                ("源音频分段目录", audioSegmentsDir),
+                ("TTS 输出目录", ttsSegmentsDir));
+
+            var ttsUrls = new List<string>
+            {
+                "http://192.168.1.154:8000/generate",
+                "http://192.168.1.154:8001/generate",
+                "http://192.168.1.154:8002/generate",
+                "http://192.168.1.154:8003/generate",
+                "http://192.168.1.154:8004/generate"
+            };
+
+            var completedSegments = new List<TTSSegment>();
+            var updateLock = new object();
+            var processedIndices = new HashSet<int>();
+
+            ttsService.SetOnSegmentCompleted((current, total, segment) =>
+            {
+                lock (updateLock)
+                {
+                    if (!processedIndices.Contains(segment.Index))
+                    {
+                        processedIndices.Add(segment.Index);
+                        completedSegments.Add(segment);
+                    }
+                }
+
+                InvokeOnUIThread(() =>
+                {
+                    UpdateSingleClipAsync(videoProject, segment).ConfigureAwait(false);
+                    UpdateProgressAndCommit($"正在重新生成 TTS... ({current}/{total})");
+                });
+            });
+
+            UpdateProgressAndCommit("正在强制重新生成 TTS...");
+
+            var allSegments = await ttsService.GenerateTTSFromSrtAsyncParallel(
+                videoProject.TranslatedSubtitlePath,
+                audioSegmentsDir,
+                ttsSegmentsDir,
+                ttsUrls,
+                "0",
+                cleanOld: true,
+                limit: -1);
+
+            ttsService.SetOnSegmentCompleted(null);
+
+            var finalSegments = allSegments.Where(s => !completedSegments.Contains(s)).ToList();
+            if (finalSegments.Count > 0)
+            {
+                UpdateProgressAndCommit($"正在更新剩余片段... ({finalSegments.Count} 个)");
+                foreach (var segment in finalSegments)
+                {
+                    await UpdateSingleClipAsync(videoProject, segment);
+                }
+            }
+
+            var ttsSegments = completedSegments.Concat(finalSegments).ToList();
+
+            LogOperationComplete("TTS 重新生成",
+                ("音频片段数量", ttsSegments.Count));
+
+            LogOperationStart("更新 clips 中的 TargetAudioClip");
+
+            var updatedCount = videoProject.Clips.Count(clip => clip.TargetAudioClip != null);
+            var errorCount = videoProject.Clips.Count(clip => clip.SourceSRTClip != null && clip.TargetAudioClip == null);
+
+            if (errorCount > 0)
+            {
+                foreach (var clip in videoProject.Clips.Where(c => c.SourceSRTClip != null && c.TargetAudioClip == null))
+                {
+                    clip.SetError("生成失败");
+                }
+            }
+
+            LogOperationComplete("更新 TargetAudioClip",
+                ("更新数量", updatedCount),
+                ("失败数量", errorCount));
+
+            videoProject.SetCompleted($"TTS 重新生成成功，共生成 {ttsSegments.Count} 个音频片段");
+            ObjectSpace.CommitChanges();
+
+            Application.ShowViewStrategy.ShowMessage($"TTS 重新生成成功，共生成 {ttsSegments.Count} 个音频片段");
+        });
+    }
+
+    private async void AdjustAudioSegments_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var action = sender as SimpleAction;
+        if (action == null) return;
+
+        var videoProject = GetCurrentVideoProject();
+#warning //应该是，验证tts的分段的音频结果
+        //ValidateVideoProject(videoProject, requireAudio: true, requireTranslatedSubtitle: true);
+
+        await ExecuteActionAsync(action, videoProject, "开始调整音频", async () =>
+        {
+            LogOperationStart("调整音频片段",
+                ("源音频", videoProject.SourceAudioPath),
+                ("翻译字幕", videoProject.TranslatedSubtitlePath));
+
+            var ttsSegmentsDir = Path.Combine(videoProject.ProjectPath, "tts_segments");
+            var adjustedDir = Path.Combine(videoProject.ProjectPath, "adjusted_segments");
+
+            LogOperationStart("调整音频片段",
+                ("TTS 片段目录", ttsSegmentsDir),
+                ("调整后输出目录", adjustedDir));
+
+            //var subtitles = await subtitleService.ParseSrtAsync(videoProject.TranslatedSubtitlePath);
+            var audioInfo = await AudioService.GetAudioInfoAsync(videoProject.SourceAudioPath);
+
+            LogOperationStart("调整音频片段",
+                ("源音频时长", $"{audioInfo.Duration:F2}s"),
+                ("字幕数量", videoProject.Clips.Count));
+
+            UpdateProgressAndCommit($"正在调整", 0, videoProject.Clips.Count);
+
+            Directory.CreateDirectory(adjustedDir);
+
+            var adjustedCount = 0;
+            foreach (var timeLineClip in videoProject.Clips)
+            {
+                if (timeLineClip.TargetAudioClip != null && timeLineClip.SourceSRTClip != null)
+                {
+                    await timeLineClip.Adjust(adjustedDir, audioInfo);
+                    adjustedCount++;
+                    Debug.WriteLine($"    已创建 AdjustedTargetAudioClip: {timeLineClip.AdjustedTargetAudioClip.FilePath}");
+
+                    if (adjustedCount % 10 == 0)
+                    {
+                        UpdateProgressAndCommit("已调整", adjustedCount, videoProject.Clips.Count);
+                    }
+                }
+            }
+
+            LogOperationComplete("调整音频片段",
+                ("调整数量", adjustedCount));
+
+            videoProject.SetCompleted($"成功调整 {adjustedCount} 个音频片段");
+            ObjectSpace.CommitChanges();
+
+            Application.ShowViewStrategy.ShowMessage($"音频调整成功，共调整 {adjustedCount} 个音频片段");
+        });
+    }
+
+    private async void OverlayAudio_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var action = sender as SimpleAction;
+        if (action == null) return;
+
+        var videoProject = GetCurrentVideoProject();
+
+        videoProject.ValidateSourceAudio();
+
+        await ExecuteActionAsync(action, videoProject, "开始合并音频", async () =>
+        {
+            LogOperationStart("合并音频",
+                ("源音频", videoProject.SourceAudioPath),
+                ("翻译字幕", videoProject.TranslatedSubtitlePath));
+
+            var outputPath = Path.Combine(videoProject.ProjectPath, "merged_audio.wav");
+            LogOperationStart("合并音频",
+                ("输出路径", outputPath));
+
+            var audioInfo = await AudioService.GetAudioInfoAsync(videoProject.SourceAudioPath);
+
+            var audioClipsWithTime = videoProject.Clips
+                .Where(c => c.AdjustedTargetAudioClip != null &&
+                            !string.IsNullOrEmpty(c.AdjustedTargetAudioClip.FilePath) &&
+                            File.Exists(c.AdjustedTargetAudioClip.FilePath))
+                .Select(c => new AudioClipWithTime
+                {
+                    Index = c.Index,
+                    FilePath = c.AdjustedTargetAudioClip.FilePath,
+                    Start = c.SourceSRTClip.Start,
+                    End = c.SourceSRTClip.End,
+                    AudioDurationMs = c.AdjustedTargetAudioClip.Duration*1000
+                })
+                .ToList();
+
+            var backgroundAudioPath = videoProject.SourceBackgroundAudioPath;
+            if (string.IsNullOrEmpty(backgroundAudioPath) || !File.Exists(backgroundAudioPath))
+            {
+                backgroundAudioPath = videoProject.SourceAudioPath;
+                LogOperationStart("警告: 未找到分离的背景音频，使用原始音频作为背景音");
+            }
+
+            if (audioClipsWithTime.Count == 0)
+            {
+                throw new UserFriendlyException("没有可合并的调整后音频片段，请先执行'7.调整音频片段'");
+            }
+
+            LogOperationStart("合并音频", ("可合并的片段数", audioClipsWithTime.Count));
+
+            foreach (var clip in audioClipsWithTime)
+            {
+                LogOperationStart("片段信息",
+                    ("索引", clip.Index),
+                    ("文件", Path.GetFileName(clip.FilePath)),
+                    ("开始时间", clip.Start),
+                    ("结束时间", clip.End));
+            }
+
+            UpdateProgressAndCommit($"正在按时间线合并", 0, audioClipsWithTime.Count);
+
+            await AudioService.MergeAudioSegmentsOnTimelineAsync(
+                audioClipsWithTime,
+                backgroundAudioPath,
+                outputPath);
+
+            LogOperationComplete("音频合并完成",
+                ("输出文件", outputPath));
+
+            videoProject.OutputAudioPath = outputPath;
+            videoProject.SetCompleted($"成功按时间线合并 {audioClipsWithTime.Count} 个音频片段");
+            ObjectSpace.CommitChanges();
+
+            Application.ShowViewStrategy.ShowMessage($"音频合并成功: {outputPath}");
+        });
+    }
+
+    private async void AddSubtitles_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var action = sender as SimpleAction;
+        if (action == null) return;
+
+        var videoProject = GetCurrentVideoProject();
+
+        ValidateFileExists(videoProject.OutputVideoPath, $"合并视频文件不存在: {videoProject.OutputVideoPath}");
+        ValidateFileExists(videoProject.TranslatedSubtitlePath, $"翻译字幕文件不存在: {videoProject.TranslatedSubtitlePath}");
+
+        await ExecuteActionAsync(action, videoProject, "开始添加字幕", async () =>
+        {
+            LogOperationStart("添加字幕到视频");
+
+            var logFile = Path.Combine(videoProject.ProjectPath, "subtitle_debug.log");
+            var logLines = new List<string>();
+
+            logLines.Add($"[VideoProjectViewController] 开始添加字幕到视频...");
+
+            var inputVideoPath = Path.Combine(videoProject.ProjectPath, "final_video.mp4");
+            ValidateFileExists(inputVideoPath, $"合并视频文件不存在: {inputVideoPath}");
+
+            LogOperationStart("添加字幕到视频",
+                ("输入视频", inputVideoPath),
+                ("翻译字幕", videoProject.TranslatedSubtitlePath),
+                ("源字幕", videoProject.SourceSubtitlePath));
+
+            var outputPath = Path.Combine(videoProject.ProjectPath, "final_video_with_subtitles.mp4");
+            LogOperationStart("添加字幕到视频",
+                ("输出路径", outputPath));
+
+            UpdateProgressAndCommit("正在准备字幕参数...");
+
+            var args = "";
+
+            if (!string.IsNullOrEmpty(videoProject.SourceSubtitlePath) && File.Exists(videoProject.SourceSubtitlePath))
+            {
+                logLines.Add($"  使用中英文字幕同时显示");
+
+                var chineseSubtitleFullPath = Path.GetFullPath(videoProject.TranslatedSubtitlePath);
+                var englishSubtitleFullPath = Path.GetFullPath(videoProject.SourceSubtitlePath);
+
+                logLines.Add($"  中文字幕完整路径: {chineseSubtitleFullPath}");
+                logLines.Add($"  英文字幕完整路径: {englishSubtitleFullPath}");
+
+                var escapedChinesePath = videoProject.TranslatedSubtitlePath.EscapeForFFmpeg();
+                var escapedEnglishPath = videoProject.SourceSubtitlePath.EscapeForFFmpeg();
+
+                logLines.Add($"  中文字幕转义后: {escapedChinesePath}");
+                logLines.Add($"  英文字幕转义后: {escapedEnglishPath}");
+
+                var debugSubtitlePath = Path.Combine(videoProject.ProjectPath, "debug_subtitle.srt");
+                videoProject.CreateDebugSubtitle(debugSubtitlePath);
+                var escapedDebugPath = debugSubtitlePath.EscapeForFFmpeg();
+                logLines.Add($"  调试字幕路径: {debugSubtitlePath}");
+                logLines.Add($"  调试字幕转义后: {escapedDebugPath}");
+
+                args = $"-i \"{inputVideoPath}\" " +
+                       $"-vf \"subtitles='{escapedChinesePath}':force_style='Fontsize=14,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=1,MarginV=50,Alignment=2',subtitles='{escapedEnglishPath}':force_style='Fontsize=14,PrimaryColour=&H00FFFF00,OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=1,MarginV=5,Alignment=2',subtitles='{escapedDebugPath}':force_style='Fontsize=12,PrimaryColour=&H0000FF00,OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=1,MarginV=0,Alignment=8'\" " +
+                       $"-c:a copy -y \"{outputPath}\"";
+            }
+            else
+            {
+                logLines.Add($"  仅使用中文字幕显示");
+
+                var subtitleFullPath = Path.GetFullPath(videoProject.TranslatedSubtitlePath);
+                logLines.Add($"  字幕完整路径: {subtitleFullPath}");
+
+                var escapedSubtitlePath = videoProject.TranslatedSubtitlePath.EscapeForFFmpeg();
+                logLines.Add($"  字幕转义后: {escapedSubtitlePath}");
+
+                args = $"-i \"{inputVideoPath}\" " +
+                       $"-vf \"subtitles='{escapedSubtitlePath}':force_style='Fontsize=14,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=1,MarginV=15,Alignment=2'\" " +
+                       $"-c:a copy -y \"{outputPath}\"";
+            }
+
+            logLines.Add($"  FFmpeg命令: {args}");
+            File.WriteAllLines(logFile, logLines);
+
+            UpdateProgressAndCommit("正在使用 FFmpeg 添加字幕...");
+
+            await ExecuteFFmpegCommandAsync(videoProject, args);
+
+            LogOperationComplete("字幕添加完成",
+                ("输出文件", outputPath));
+
+            videoProject.OutputVideoPath = outputPath;
+            videoProject.SetCompleted("字幕添加成功");
+            ObjectSpace.CommitChanges();
+
+            Application.ShowViewStrategy.ShowMessage($"字幕添加成功: {outputPath}");
+        });
+    }
+
+    private async void MergeVideoAndSubtitles_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var action = sender as SimpleAction;
+        if (action == null) return;
+
+        var videoProject = GetCurrentVideoProject();
+
+        videoProject.ValidateSourceAudio();
+
+        await ExecuteActionAsync(action, videoProject, "开始生成最终视频", async () =>
+        {
+            var inputVideoPath = videoProject.SourceVideoPath;
+            var outputPath = Path.Combine(videoProject.ProjectPath, "final_video_with_subtitles.mp4");
+
+            ValidateFileExists(inputVideoPath, $"源视频文件不存在: {inputVideoPath}");
+            ValidateFileExists(videoProject.OutputAudioPath, $"合并音频文件不存在: {videoProject.OutputAudioPath}");
+            ValidateFileExists(videoProject.TranslatedSubtitlePath, $"翻译字幕文件不存在: {videoProject.TranslatedSubtitlePath}");
+
+            var logFile = Path.Combine(videoProject.ProjectPath, "final_video_build.log");
+            var logLines = new List<string>();
+            logLines.Add($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] 开始生成最终视频（单命令模式）");
+
+            LogOperationStart("生成最终视频（单FFmpeg命令）",
+                ("源视频", inputVideoPath),
+                ("音频", videoProject.OutputAudioPath),
+                ("字幕", videoProject.TranslatedSubtitlePath));
+
+            UpdateProgressAndCommit("正在构建FFmpeg命令...");
+
+            var escapedChinesePath = videoProject.TranslatedSubtitlePath.EscapeForFFmpeg();
+            var escapedVideoPath = inputVideoPath.EscapeForFFmpeg();
+            var escapedAudioPath = videoProject.OutputAudioPath.EscapeForFFmpeg();
+
+            var debugSubtitlePath = Path.Combine(videoProject.ProjectPath, "debug_subtitle.srt");
+            videoProject.CreateDebugSubtitle(debugSubtitlePath);
+            var escapedDebugPath = debugSubtitlePath.EscapeForFFmpeg();
+
+            logLines.Add($"调试字幕路径: {debugSubtitlePath}");
+            logLines.Add($"调试字幕转义后: {escapedDebugPath}");
+
+            var ffmpegArgs = "";
+            if (!string.IsNullOrEmpty(videoProject.SourceSubtitlePath) && File.Exists(videoProject.SourceSubtitlePath))
+            {
+                var escapedEnglishPath = videoProject.SourceSubtitlePath.EscapeForFFmpeg();
+
+                ffmpegArgs = $"-i \"{inputVideoPath}\" -i \"{videoProject.OutputAudioPath}\" " +
+                             $"-filter_complex \"[0:v]subtitles='{escapedChinesePath}':force_style='Fontsize=14,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=1,MarginV=50,Alignment=2'[v1];[v1]subtitles='{escapedEnglishPath}':force_style='Fontsize=14,PrimaryColour=&H00FFFF00,OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=1,MarginV=5,Alignment=2'[v2];[v2]subtitles='{escapedDebugPath}':force_style='Fontsize=12,PrimaryColour=&H0000FF00,OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=1,MarginV=0,Alignment=8'[v]\" " +
+                             $"-map \"[v]\" -map 1:a -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 192k -y \"{outputPath}\"";
+
+                logLines.Add("使用中英文字幕+调试字幕同时显示");
+            }
+            else
+            {
+                ffmpegArgs = $"-i \"{inputVideoPath}\" -i \"{videoProject.OutputAudioPath}\" " +
+                             $"-filter_complex \"[0:v]subtitles='{escapedChinesePath}':force_style='Fontsize=14,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=1,MarginV=50,Alignment=2'[v1];[v1]subtitles='{escapedDebugPath}':force_style='Fontsize=12,PrimaryColour=&H0000FF00,OutlineColour=&H00000000,BorderStyle=1,Outline=1,Shadow=1,MarginV=0,Alignment=8'[v]\" " +
+                             $"-map \"[v]\" -map 1:a -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 192k -y \"{outputPath}\"";
+
+                logLines.Add("使用中文字幕+调试字幕同时显示");
+            }
+
+            logLines.Add($"FFmpeg命令: {ffmpegArgs}");
+            File.WriteAllLines(logFile, logLines);
+
+            UpdateProgressAndCommit("正在使用 FFmpeg 生成最终视频...");
+
+            await ExecuteFFmpegCommandAsync(videoProject, ffmpegArgs);
+
+            LogOperationComplete("最终视频生成成功",
+                ("输出文件", outputPath));
+
+            videoProject.OutputVideoPath = outputPath;
+            videoProject.SetCompleted("最终视频生成成功");
+            ObjectSpace.CommitChanges();
+
+            Application.ShowViewStrategy.ShowMessage($"最终视频生成成功: {outputPath}");
+        });
+    }
+
+    private async void MergeVideo_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var action = sender as SimpleAction;
+        if (action == null) return;
+
+        var videoProject = GetCurrentVideoProject();
+
+        ValidateFileExists(videoProject.SourceVideoPath, $"源视频文件不存在: {videoProject.SourceVideoPath}");
+        ValidateFileExists(videoProject.OutputAudioPath, $"合并音频文件不存在: {videoProject.OutputAudioPath}");
+
+        await ExecuteActionAsync(action, videoProject, "开始合并视频", async () =>
+        {
+            LogOperationStart("合并视频",
+                ("源视频", videoProject.SourceVideoPath),
+                ("合并音频", videoProject.OutputAudioPath));
+
+            var outputPath = Path.Combine(videoProject.ProjectPath, "final_video.mp4");
+            LogOperationStart("合并视频",
+                ("输出路径", outputPath));
+
+            var args = $"-i \"{videoProject.SourceVideoPath}\" -i \"{videoProject.OutputAudioPath}\" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 192k -map 0:v:0 -map 1:a:0 -y \"{outputPath}\"";
+
+            UpdateProgressAndCommit("正在使用 FFmpeg 合并视频...");
+
+            await ExecuteFFmpegCommandAsync(videoProject, args);
+
+            LogOperationComplete("视频合并完成",
+                ("输出文件", outputPath));
+
+            videoProject.OutputVideoPath = outputPath;
+            videoProject.SetCompleted("视频合并成功");
+            ObjectSpace.CommitChanges();
+
+            Application.ShowViewStrategy.ShowMessage($"视频合并成功: {outputPath}");
+        });
+    }
+
+    private void PlayOutputAudio_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var videoProject = GetCurrentVideoProject();
+
+        ValidateFileExists(videoProject.OutputAudioPath, $"合成音频文件不存在: {videoProject.OutputAudioPath}");
+
+        try
+        {
+            LogOperationStart("播放合成音频",
+                ("音频文件", videoProject.OutputAudioPath));
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = videoProject.OutputAudioPath,
+                UseShellExecute = true
+            });
+
+            Application.ShowViewStrategy.ShowMessage($"正在播放合成音频: {videoProject.OutputAudioPath}");
+        }
+        catch (Exception ex)
+        {
+            throw new UserFriendlyException($"播放音频失败: {ex.Message}");
+        }
+    }
+
+    private void PlayOutputVideo_Execute(object sender, SimpleActionExecuteEventArgs e)
+    {
+        var videoProject = GetCurrentVideoProject();
+
+        ValidateFileExists(videoProject.OutputVideoPath, $"合成视频文件不存在: {videoProject.OutputVideoPath}");
+
+        try
+        {
+            LogOperationStart("播放合成视频",
+                ("视频文件", videoProject.OutputVideoPath));
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = videoProject.OutputVideoPath,
+                UseShellExecute = true
+            });
+
+            Application.ShowViewStrategy.ShowMessage($"正在播放合成视频: {videoProject.OutputVideoPath}");
+        }
+        catch (Exception ex)
+        {
+            throw new UserFriendlyException($"播放视频失败: {ex.Message}");
+        }
+    }
+
+}
+

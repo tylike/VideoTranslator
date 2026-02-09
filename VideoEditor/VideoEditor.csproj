@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>VideoEditor</RootNamespace>
+    <AssemblyName>VideoEditor</AssemblyName>
+	  <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AngleSharp" Version="1.4.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="LibVLCSharp" Version="3.9.5" />
+    <PackageReference Include="LibVLCSharp.WPF" Version="3.9.5" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.2" />
+    <PackageReference Include="System.Text.Json" Version="10.0.2" />
+    <PackageReference Include="DevExpress.ExpressApp" Version="25.1.4" />
+    <PackageReference Include="DevExpress.ExpressApp.Xpo" Version="25.1.4" />
+    <PackageReference Include="DevExpress.Persistent.Base" Version="25.1.4" />
+    <PackageReference Include="DevExpress.Xpo" Version="25.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TimeLine\TimeLine.csproj" />
+    <ProjectReference Include="..\VideoPlayer\VideoPlayer.csproj" />
+    <ProjectReference Include="..\Logic\VideoTranslator.Logic.csproj" />
+    <ProjectReference Include="..\PublishToBilibili\PublishToBilibili.csproj" />
+    <ProjectReference Include="..\VT\VT.Module\VT.Module.csproj" />
+    <ProjectReference Include="..\第三方项目\YoutubeDLSharp-master\YoutubeDLSharp\YoutubeDLSharp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

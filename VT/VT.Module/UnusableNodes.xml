@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application>
+  <Views Id="Views">
+    <DetailView Id="VideoProject_DetailView">
+      <Layout Id="Layout">
+        <LayoutGroup Id="Main">
+          <LayoutItem Id="ProgressPercentage" ViewItem="ProgressPercentage" />
+          <TabbedGroup Id="Tabs">
+            <LayoutGroup Id="信息">
+              <LayoutGroup Id="SizeableEditors">
+                <LayoutItem Id="LastOutput" ViewItem="LastOutput" />
+                <LayoutItem Id="ProgressMessage" ViewItem="ProgressMessage" />
+              </LayoutGroup>
+            </LayoutGroup>
+          </TabbedGroup>
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
+  </Views>
+</Application>

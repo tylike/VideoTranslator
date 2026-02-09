@@ -1,0 +1,205 @@
+﻿using System.Text.Json;
+
+namespace VT.Core;
+
+public static class LanguageExtensions
+{
+    #region Public Methods
+
+    public static string ToWhisperCode(this Language language)
+    {
+        return language switch
+        {
+            Language.Auto => throw new Exception("whisper 不支持 auto!"),
+            Language.English => "en",
+            Language.Chinese => "zh",
+            Language.Japanese => "ja",
+            Language.Korean => "ko",
+            Language.Spanish => "es",
+            Language.French => "fr",
+            Language.German => "de",
+            Language.Italian => "it",
+            Language.Portuguese => "pt",
+            Language.Russian => "ru",
+            Language.Arabic => "ar",
+            Language.Hindi => "hi",
+            Language.Turkish => "tr",
+            Language.Vietnamese => "vi",
+            Language.Thai => "th",
+            Language.Dutch => "nl",
+            Language.Polish => "pl",
+            Language.Swedish => "sv",
+            Language.Norwegian => "no",
+            Language.Danish => "da",
+            Language.Finnish => "fi",
+            Language.Greek => "el",
+            Language.Czech => "cs",
+            Language.Hungarian => "hu",
+            Language.Romanian => "ro",
+            Language.Bulgarian => "bg",
+            Language.Croatian => "hr",
+            Language.Serbian => "sr",
+            Language.Slovak => "sk",
+            Language.Slovenian => "sl",
+            Language.Lithuanian => "lt",
+            Language.Latvian => "lv",
+            Language.Estonian => "et",
+            Language.Ukrainian => "uk",
+            Language.Hebrew => "he",
+            Language.Persian => "fa",
+            Language.Bengali => "bn",
+            Language.Tamil => "ta",
+            Language.Telugu => "te",
+            Language.Kannada => "kn",
+            Language.Malayalam => "ml",
+            Language.Marathi => "mr",
+            Language.Gujarati => "gu",
+            Language.Punjabi => "pa",
+            Language.Urdu => "ur",
+            Language.Indonesian => "id",
+            Language.Malay => "ms",
+            Language.Filipino => "tl",
+            Language.Swahili => "sw",
+            Language.Amharic => "am",
+            Language.Burmese => "my",
+            Language.Georgian => "ka",
+            Language.Khmer => "km",
+            Language.Lao => "lo",
+            Language.Mongolian => "mn",
+            Language.Nepali => "ne",
+            Language.Sinhala => "si",
+            Language.Albanian => "sq",
+            Language.Armenian => "hy",
+            Language.Azerbaijani => "az",
+            Language.Basque => "eu",
+            Language.Belarusian => "be",
+            Language.Bosnian => "bs",
+            Language.Catalan => "ca",
+            Language.Esperanto => "eo",
+            Language.Galician => "gl",
+            Language.Icelandic => "is",
+            Language.Irish => "ga",
+            Language.Kazakh => "kk",
+            Language.Luxembourgish => "lb",
+            Language.Macedonian => "mk",
+            Language.Moldovan => "ro",
+            Language.Montenegrin => "sr",
+            Language.Pashto => "ps",
+            Language.Uzbek => "uz",
+            _ => "en"
+        };
+    }
+
+    public static Language FromWhisperCode(string code)
+    {
+        return code.ToLowerInvariant() switch
+        {
+            "auto" => Language.Auto,
+            "en" => Language.English,
+            "zh" => Language.Chinese,
+            "ja" => Language.Japanese,
+            "ko" => Language.Korean,
+            "es" => Language.Spanish,
+            "fr" => Language.French,
+            "de" => Language.German,
+            "it" => Language.Italian,
+            "pt" => Language.Portuguese,
+            "ru" => Language.Russian,
+            "ar" => Language.Arabic,
+            "hi" => Language.Hindi,
+            "tr" => Language.Turkish,
+            "vi" => Language.Vietnamese,
+            "th" => Language.Thai,
+            "nl" => Language.Dutch,
+            "pl" => Language.Polish,
+            "sv" => Language.Swedish,
+            "no" => Language.Norwegian,
+            "da" => Language.Danish,
+            "fi" => Language.Finnish,
+            "el" => Language.Greek,
+            "cs" => Language.Czech,
+            "hu" => Language.Hungarian,
+            "ro" => Language.Romanian,
+            "bg" => Language.Bulgarian,
+            "hr" => Language.Croatian,
+            "sr" => Language.Serbian,
+            "sk" => Language.Slovak,
+            "sl" => Language.Slovenian,
+            "lt" => Language.Lithuanian,
+            "lv" => Language.Latvian,
+            "et" => Language.Estonian,
+            "uk" => Language.Ukrainian,
+            "he" => Language.Hebrew,
+            "fa" => Language.Persian,
+            "bn" => Language.Bengali,
+            "ta" => Language.Tamil,
+            "te" => Language.Telugu,
+            "kn" => Language.Kannada,
+            "ml" => Language.Malayalam,
+            "mr" => Language.Marathi,
+            "gu" => Language.Gujarati,
+            "pa" => Language.Punjabi,
+            "ur" => Language.Urdu,
+            "id" => Language.Indonesian,
+            "ms" => Language.Malay,
+            "tl" => Language.Filipino,
+            "sw" => Language.Swahili,
+            "am" => Language.Amharic,
+            "my" => Language.Burmese,
+            "ka" => Language.Georgian,
+            "km" => Language.Khmer,
+            "lo" => Language.Lao,
+            "mn" => Language.Mongolian,
+            "ne" => Language.Nepali,
+            "si" => Language.Sinhala,
+            "sq" => Language.Albanian,
+            "hy" => Language.Armenian,
+            "az" => Language.Azerbaijani,
+            "eu" => Language.Basque,
+            "be" => Language.Belarusian,
+            "bs" => Language.Bosnian,
+            "ca" => Language.Catalan,
+            "eo" => Language.Esperanto,
+            "gl" => Language.Galician,
+            "is" => Language.Icelandic,
+            "ga" => Language.Irish,
+            "kk" => Language.Kazakh,
+            "lb" => Language.Luxembourgish,
+            "mk" => Language.Macedonian,
+            "ps" => Language.Pashto,
+            "uz" => Language.Uzbek,
+            _ => Language.English
+        };
+    }
+
+    public static Language? TryParseFromJson(string jsonFilePath)
+    {
+        if (!File.Exists(jsonFilePath))
+        {
+            return null;
+        }
+
+        try
+        {
+            var jsonContent = File.ReadAllText(jsonFilePath);
+            using var jsonDoc = JsonDocument.Parse(jsonContent);
+            
+            if (jsonDoc.RootElement.TryGetProperty("language", out var languageElement))
+            {
+                var languageCode = languageElement.GetString();
+                if (!string.IsNullOrEmpty(languageCode))
+                {
+                    return FromWhisperCode(languageCode);
+                }
+            }
+        }
+        catch
+        {
+            return null;
+        }
+
+        return null;
+    }
+
+    #endregion
+}

@@ -1,0 +1,95 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+	  <Platforms>AnyCPU;x64</Platforms>
+
+	  <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>ExpressApp.ico</ApplicationIcon>
+    <Deterministic>false</Deterministic>
+    <AssemblyVersion>1.0.*</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Configurations>Debug;Release;EasyTest</Configurations>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RazorCompileOnBuild>true</RazorCompileOnBuild>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+	  <LangVersion>preview</LangVersion>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\GeneratedFiles</CompilerGeneratedFilesOutputPath>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Forms\Controls\**" />
+    <Content Remove="Forms\Controls\**" />
+    <EmbeddedResource Remove="Forms\Controls\**" />
+    <None Remove="Forms\Controls\**" />
+    <Page Remove="Forms\Controls\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Controllers\StatusBarProgressDemoController.cs" />
+    <Compile Remove="Controllers\VideoProjectEditController.cs" />
+    <Compile Remove="Forms\TimelineViewerForm.cs" />
+    <Compile Remove="Forms\TimelineViewerForm.Designer.cs" />
+    <Compile Remove="Forms\VideoEditorForm.cs" />
+    <Compile Remove="Forms\VideoEditorForm.Designer.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Remove="config.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Remove="Forms\TimelineViewerForm.resx" />
+    <EmbeddedResource Remove="Forms\VideoEditorForm.resx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="DevExpress.ExpressApp.ListView" Alias="ListView" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Model.xafml" />
+    <None Remove="Images\Logo.svg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Model.xafml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Images\Logo.svg" />
+    <EmbeddedResource Include="Images\ExpressAppLogo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="DevExpress.ExpressApp" Version="25.1.4" />
+    <PackageReference Include="DevExpress.ExpressApp.CodeAnalysis" Version="25.1.4" />
+    <PackageReference Include="DevExpress.ExpressApp.FileAttachment.Win" Version="25.1.4" />
+    <PackageReference Include="DevExpress.ExpressApp.Notifications.Win" Version="25.1.4" />
+    <PackageReference Include="DevExpress.ExpressApp.Office.Win" Version="25.1.4" />
+    <PackageReference Include="DevExpress.ExpressApp.TreeListEditors.Win" Version="25.1.4" />
+    <PackageReference Include="DevExpress.ExpressApp.Validation.Win" Version="25.1.4" />
+    <PackageReference Include="DevExpress.ExpressApp.Win" Version="25.1.4" />
+    <PackageReference Include="DevExpress.ExpressApp.Win.Design" Version="25.1.4" />
+    <PackageReference Include="DevExpress.ExpressApp.Xpo" Version="25.1.4" />
+    <PackageReference Include="DevExpress.Persistent.Base" Version="25.1.4" />
+    <PackageReference Include="DevExpress.Persistent.BaseImpl.Xpo" Version="25.1.4" />
+    <PackageReference Include="DevExpress.RichEdit.Export" Version="25.1.4" />
+    <PackageReference Include="DevExpress.Win.Design" Version="25.1.4" />
+    <PackageReference Include="LibVLCSharp.WinForms" Version="3.9.5" />
+    <PackageReference Include="LibVLCSharp.WPF" Version="3.9.5" />
+	  <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.WindowsForms" Version="9.0.0" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.21" />
+    <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
+    <PackageReference Include="FlaUI.Core" Version="5.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\SimpleVideoPlayer\SimpleVideoPlayer.csproj" />
+    <ProjectReference Include="..\VT.Module\VT.Module.csproj" />
+    <ProjectReference Include="..\..\PublishToBilibili\PublishToBilibili.csproj" />
+    <ProjectReference Include="..\..\TimeLine\TimeLine.csproj" />
+  </ItemGroup>
+</Project>

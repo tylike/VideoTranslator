@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{Title}}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; padding: 20px; color: #e0e0e0; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3); }
+        .header h1 { color: white; font-size: 28px; margin-bottom: 10px; }
+        .header p { color: rgba(255,255,255,0.9); font-size: 14px; }
+        .stats { display: flex; gap: 20px; margin-top: 15px; }
+        .stat-item { background: rgba(255,255,255,0.15); padding: 10px 20px; border-radius: 10px; backdrop-filter: blur(10px); }
+        .stat-item span { display: block; font-size: 12px; color: rgba(255,255,255,0.7); }
+        .stat-item strong { display: block; font-size: 20px; color: white; margin-top: 5px; }
+        .timeline-container { position: relative; padding: 20px 0; }
+        .timeline-track { position: relative; height: 60px; background: rgba(255,255,255,0.03); border-radius: 4px; margin-bottom: 15px; overflow: visible; }
+        #timelineWrapper { position: relative; overflow-x: auto; }
+        .timeline-track-label { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); background: rgba(102, 126, 234, 0.8); color: white; padding: 4px 10px; border-radius: 3px; font-size: 11px; font-weight: bold; z-index: 10; white-space: nowrap; }
+        .timeline-bar { position: absolute; height: 40px; top: 50%; transform: translateY(-50%); border-radius: 2px; transition: all 0.15s ease; cursor: pointer; border: 1px solid rgba(255,255,255,0.3); left: var(--bar-left); width: var(--bar-width); }
+        .timeline-gap { position: absolute; top: 0; bottom: 0; width: 2px; background: transparent; z-index: 5; }
+.timeline-bar:hover { filter: brightness(1.3); box-shadow: 0 0 15px rgba(255,255,255,0.4); z-index: 5; }
+.timeline-bar.timeline-gap { background: transparent; border: 1px dashed rgba(255,255,255,0.4); border-radius: 2px; }
+.timeline-bar.timeline-gap-solid { background: transparent; border-left: 1px solid rgba(255,255,255,0.2); border-right: 1px solid rgba(255,255,255,0.2); }
+.timeline-separator { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.15); }
+        .source-srt { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .source-audio { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .target-audio { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .target-audio.duration-equal { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); border: 2px solid #43e97b; }
+        .target-audio.duration-longer { background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%); border: 2px solid #ffa500; }
+        .target-audio.duration-shorter { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border: 2px solid #4facfe; }
+        .adjusted-audio { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .adjusted-audio.duration-equal { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border: 2px solid #fa709a; }
+        .adjusted-audio.duration-longer { background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%); border: 2px solid #ffa500; }
+        .adjusted-audio.duration-shorter { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); border: 2px solid #a8edea; }
+        .timeline-controls { position: sticky; top: 0; background: rgba(26,26,46,0.95); padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; z-index: 100; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .timeline-controls label { color: #888; font-size: 13px; }
+        .timeline-controls input[type="range"] { width: 200px; cursor: pointer; }
+        .timeline-controls button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 12px; transition: all 0.2s; }
+        .timeline-controls button:hover { transform: scale(1.05); }
+        .timeline-zoom-hint { color: #666; font-size: 11px; margin-left: auto; }
+        .clip-card { background: rgba(255,255,255,0.08); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease; }
+        .clip-card:hover { background: rgba(255,255,255,0.12); border-color: rgba(102, 126, 234, 0.5); transform: translateX(5px); }
+        .clip-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .clip-index { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+        .clip-time { color: #667eea; font-weight: bold; font-family: 'Consolas', monospace; }
+        .clip-body { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; }
+        .info-section { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 15px; }
+        .info-section h4 { color: #667eea; margin-bottom: 12px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .info-section h4 .icon { font-size: 16px; }
+        .info-row { display: flex; margin-bottom: 8px; font-size: 13px; }
+        .info-label { color: #888; width: 80px; flex-shrink: 0; }
+        .info-value { color: #e0e0e0; flex: 1; word-break: break-word; }
+        .info-value.source-text { background: rgba(240, 147, 251, 0.2); padding: 10px; border-radius: 5px; border-left: 3px solid #f093fb; }
+        .info-value.target-text { background: rgba(67, 233, 123, 0.2); padding: 10px; border-radius: 5px; border-left: 3px solid #43e97b; }
+        .duration-badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: bold; }
+        .duration-normal { background: rgba(67, 233, 123, 0.3); color: #43e97b; }
+        .duration-warning { background: rgba(250, 112, 154, 0.3); color: #fa709a; }
+        .duration-error { background: rgba(255, 107, 107, 0.3); color: #ff6b6b; }
+        .status-badge { padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: bold; }
+        .status-ok { background: rgba(67, 233, 123, 0.3); color: #43e97b; }
+        .status-warning { background: rgba(254, 225, 64, 0.3); color: #fee140; }
+        .status-error { background: rgba(255, 107, 107, 0.3); color: #ff6b6b; }
+        .speed-indicator { padding: 5px 12px; border-radius: 5px; font-weight: bold; }
+        .speed-normal { background: rgba(67, 233, 123, 0.3); color: #43e97b; }
+        .speed-fast { background: rgba(250, 112, 154, 0.3); color: #fa709a; }
+        .progress-bar { height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+        .legend { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .legend-color { width: 20px; height: 20px; border-radius: 5px; }
+        @media (max-width: 768px) { .clip-body { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 {{ProjectName}}</h1>
+        <p>项目路径: {{ProjectPath}}</p>
+        <p>总片段数: {{ClipCount}} 个 | 总时长: {{TotalDuration}}</p>
+        <div class="stats">
+            <div class="stat-item"><span>源音频</span><strong>{{SourceAudioCount}}/{{ClipCount}}</strong></div>
+            <div class="stat-item"><span>目标音频</span><strong>{{TargetAudioCount}}/{{ClipCount}}</strong></div>
+            <div class="stat-item"><span>已调整</span><strong>{{AdjustedCount}}/{{ClipCount}}</strong></div>
+            <div class="stat-item"><span>速度异常</span><strong style="color: {{SpeedIssueColor}}">{{SpeedIssueCount}}</strong></div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="legend-color source-srt"></div><span>源字幕</span></div>
+        <div class="legend-item"><div class="legend-color source-audio"></div><span>源音频</span></div>
+        <div class="legend-item"><div class="legend-color target-audio"></div><span>目标音频</span></div>
+        <div class="legend-item"><div class="legend-color adjusted-audio"></div><span>调整后音频</span></div>
+    </div>
+
+    <div class="timeline-controls">
+        <label>🔍 缩放:</label>
+        <input type="range" id="zoomSlider" min="1" max="20" value="1" step="0.5">
+        <span id="zoomValue">1x</span>
+        <button onclick="resetZoom()">重置</button>
+        <span class="timeline-zoom-hint">滚动鼠标滚轮也可缩放</span>
+    </div>
+
+    <div class="timeline-container" id="timelineContainer">
+        <h3 style="color: #667eea; margin-bottom: 15px;">⏱️ 全局时间线概览 (总时长: {{TotalDuration}})</h3>
+        <div id="timelineWrapper" style="position: relative; overflow-x: auto;">
+            <div id="timelineInner" style="position: relative; min-width: 100%;">
+                {{TimelineTracks}}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentZoom = 1;
+        const timelineWrapper = document.getElementById('timelineWrapper');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomValue = document.getElementById('zoomValue');
+        const timelineBars = document.querySelectorAll('.timeline-bar');
+
+        function updateZoom(zoom) {
+            currentZoom = zoom;
+            zoomSlider.value = zoom;
+            zoomValue.textContent = zoom.toFixed(1) + 'x';
+            
+            timelineBars.forEach(bar => {
+                const originalLeft = parseFloat(bar.getAttribute('data-original-left'));
+                const originalWidth = parseFloat(bar.getAttribute('data-original-width'));
+                bar.style.setProperty('--bar-left', (originalLeft * zoom) + '%');
+                bar.style.setProperty('--bar-width', (originalWidth * zoom) + '%');
+            });
+
+            timelineWrapper.style.overflowX = zoom > 1 ? 'auto' : 'hidden';
+        }
+
+        updateZoom(1);
+
+        zoomSlider.addEventListener('input', function() {
+            updateZoom(parseFloat(this.value));
+        });
+
+        function resetZoom() {
+            updateZoom(1);
+        }
+
+        timelineWrapper.addEventListener('wheel', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -0.5 : 0.5;
+                const newZoom = Math.max(1, Math.min(20, currentZoom + delta));
+                updateZoom(newZoom);
+            }
+        });
+    </script>
+
+    {{ClipCards}}
+
+</body>
+</html>

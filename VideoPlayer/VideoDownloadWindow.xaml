@@ -1,0 +1,54 @@
+<Window x:Class="VideoPlayer.VideoDownloadWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:VideoPlayer"
+        mc:Ignorable="d"
+        Title="视频下载器" Height="250" Width="600" 
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- URL 输入 -->
+        <Label Grid.Row="0" Grid.Column="0" Content="视频 URL:" VerticalAlignment="Center"/>
+        <TextBox x:Name="urlTextBox" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" 
+                 Height="25" Margin="10" Text="https://www.youtube.com/watch?v=dQw4w9WgXcQ"/>
+        
+        <!-- 输出路径 -->
+        <Label Grid.Row="1" Grid.Column="0" Content="保存路径:" VerticalAlignment="Center"/>
+        <TextBox x:Name="outputPathTextBox" Grid.Row="1" Grid.Column="1" 
+                 Height="25" Margin="10" Text="C:\Videos\downloaded_video.mp4"/>
+        <Button x:Name="browseButton" Grid.Row="1" Grid.Column="2" 
+                Content="浏览..." Width="75" Height="25" Margin="10,0,0,0" 
+                Style="{StaticResource ButtonStyle}" Click="BrowseButton_Click"/>
+        
+        <!-- 进度条 -->
+        <Label Grid.Row="2" Grid.Column="0" Content="下载进度:" VerticalAlignment="Center"/>
+        <ProgressBar x:Name="progressBar" Grid.Row="2" Grid.Column="1" 
+                     Height="20" Margin="10" Minimum="0" Maximum="100"/>
+        <Label x:Name="progressLabel" Grid.Row="2" Grid.Column="2" 
+               Content="0%" VerticalAlignment="Center" HorizontalAlignment="Center" Width="40"/>
+        
+        <!-- 控制按钮 -->
+        <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" 
+                    Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
+            <Button x:Name="downloadButton" Content="开始下载" Width="100" Height="30" 
+                    Style="{StaticResource ButtonStyle}" Click="DownloadButton_Click"/>
+            <Button x:Name="cancelButton" Content="取消下载" Width="100" Height="30" 
+                    Style="{StaticResource ButtonStyle}" Margin="15,0,0,0" 
+                    IsEnabled="False" Click="CancelButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

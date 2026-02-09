@@ -1,0 +1,396 @@
+@inject IVideoEditorService EditorService
+@inject ISnackbar Snackbar
+@using VideoTranslator.Models
+
+<div class="timeline-wrapper" @onmousemove="OnMouseMove" @onmouseup="OnMouseUp">
+    <div class="timeline-ruler">
+        @for (int i = 0; i <= EditorService.CurrentProject.Duration; i += 5)
+        {
+            <div class="ruler-mark" style="left: @(i * pixelsPerSecond)px;">
+                <div class="ruler-line"></div>
+                <div class="ruler-text">@FormatTime(i)</div>
+            </div>
+        }
+    </div>
+
+    <div class="timeline-tracks">
+        @foreach (var track in EditorService.CurrentProject.Tracks.OrderBy(t => t.Order))
+        {
+            <div class="timeline-track" 
+                 style="background-color: @(track.IsVisible ? track.Color + "20" : "transparent");"
+                 @onclick="@(() => EditorService.SelectTrack(track.Id))">
+                <div class="track-header" 
+                     style="background-color: @track.Color; opacity: @(track.IsVisible ? 1 : 0.3);">
+                    <div class="track-info">
+                        <MudText Typo="Typo.body2" Class="track-name">@track.Name</MudText>
+                        <MudText Typo="Typo.caption" Class="track-type">@(GetTrackTypeText(track.Type))</MudText>
+                    </div>
+                    <div class="track-controls">
+                        <MudIconButton Icon="@(track.IsMuted ? Icons.Material.Filled.VolumeOff : Icons.Material.Filled.VolumeUp)" 
+                                       Size="Size.Small" 
+                                       Class="track-control-btn"
+                                       OnClick="@(() => ToggleTrackMute(track.Id))" />
+                        <MudIconButton Icon="@(track.IsVisible ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)" 
+                                       Size="Size.Small" 
+                                       Class="track-control-btn"
+                                       OnClick="@(() => ToggleTrackVisibility(track.Id))" />
+                    </div>
+                </div>
+                <div class="track-content" style="width: @(EditorService.CurrentProject.Duration * pixelsPerSecond)px;">
+                    @foreach (var clip in track.Clips.OrderBy(c => c.StartTime))
+                    {
+                        <div class="clip @(EditorService.SelectedClipId == clip.Id ? "selected" : "")"
+                             style="left: @(clip.StartTime * pixelsPerSecond)px; 
+                                    width: @(clip.Duration * pixelsPerSecond)px; 
+                                    background-color: @track.Color;
+                                    opacity: @(clip.IsVisible ? 1 : 0.3);"
+                             @onclick="@(() => EditorService.SelectClip(clip.Id))"
+                             @onclick:stopPropagation="true">
+                            <div class="clip-content">
+                                <div class="d-flex justify-space-between align-center mb-1">
+                                    <MudText Typo="Typo.caption" Class="clip-name">@clip.Name</MudText>
+                                    <MudText Typo="Typo.caption" Class="clip-duration">@FormatClipDuration(clip)</MudText>
+                                </div>
+                                @if (!string.IsNullOrEmpty(clip.Content))
+                                {
+                                    <MudText Typo="Typo.caption" Class="clip-text">@TruncateText(clip.Content, 50)</MudText>
+                                }
+                                @if (clip.IsModified)
+                                {
+                                    <MudText Typo="Typo.caption" Class="clip-modified">已调整</MudText>
+                                }
+                                @if (clip.IsGenerated)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.RecordVoiceOver" Size="Size.Small" Class="clip-generated" />
+                                }
+                            </div>
+                            <div class="clip-handles">
+                                <div class="clip-handle clip-handle-left" @onmousedown="@(e => StartResizeWithMouse(e, clip, true))"></div>
+                                <div class="clip-handle clip-handle-right" @onmousedown="@(e => StartResizeWithMouse(e, clip, false))"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="playhead" style="left: @(EditorService.CurrentProject.CurrentTime * pixelsPerSecond)px;"></div>
+</div>
+
+<style>
+    .timeline-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: #1a1a27;
+    }
+
+    .timeline-ruler {
+        position: sticky;
+        top: 0;
+        height: 30px;
+        background-color: #2a2833;
+        border-bottom: 1px solid #33323e;
+        z-index: 10;
+    }
+
+    .ruler-mark {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .ruler-line {
+        width: 1px;
+        height: 10px;
+        background-color: #74718e;
+        margin-top: 5px;
+    }
+
+    .ruler-text {
+        font-size: 10px;
+        color: #92929f;
+        margin-top: 2px;
+    }
+
+    .timeline-tracks {
+        padding-top: 10px;
+    }
+
+    .timeline-track {
+        position: relative;
+        margin-bottom: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .track-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .track-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .track-name {
+        font-weight: 500;
+        color: white;
+    }
+
+    .track-type {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .track-controls {
+        display: flex;
+        gap: 4px;
+    }
+
+    .track-control-btn {
+        color: white;
+    }
+
+    .track-content {
+        position: relative;
+        height: 60px;
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+    }
+
+    .clip {
+        position: absolute;
+        top: 5px;
+        height: 50px;
+        border-radius: 4px;
+        cursor: pointer;
+        overflow: hidden;
+        transition: box-shadow 0.2s;
+        border: 2px solid transparent;
+    }
+
+    .clip:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .clip.selected {
+        border-color: white;
+        box-shadow: 0 0 0 2px rgba(126, 111, 255, 0.5);
+    }
+
+    .clip-content {
+        padding: 4px 8px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .clip-name {
+        font-weight: 500;
+        color: white;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .clip-text {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .clip-modified {
+        color: #ffb545;
+        font-size: 9px;
+    }
+
+    .clip-generated {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        color: white;
+        opacity: 0.7;
+    }
+
+    .clip-handles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+    }
+
+    .clip-handle {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 8px;
+        cursor: ew-resize;
+        pointer-events: auto;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .clip:hover .clip-handle {
+        opacity: 1;
+    }
+
+    .clip-handle-left {
+        left: 0;
+        background: linear-gradient(to right, rgba(0, 0, 0, 0.3), transparent);
+    }
+
+    .clip-handle-right {
+        right: 0;
+        background: linear-gradient(to left, rgba(0, 0, 0, 0.3), transparent);
+    }
+
+    .playhead {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #ff3f5f;
+        z-index: 20;
+        pointer-events: none;
+    }
+
+    .playhead::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -5px;
+        width: 12px;
+        height: 12px;
+        background-color: #ff3f5f;
+        transform: rotate(45deg);
+        border-radius: 2px;
+    }
+</style>
+
+@code {
+    private double pixelsPerSecond => 50 * EditorService.CurrentProject.ZoomLevel;
+    private Clip? resizingClip;
+    private bool isResizingLeft;
+    private double resizeStartTime;
+    private double resizeEndTime;
+    private double resizeStartX;
+
+    private string GetTrackTypeText(TrackType type)
+    {
+        return type switch
+        {
+            TrackType.Video => "视频",
+            TrackType.Audio => "音频",
+            TrackType.Subtitle => "字幕",
+            _ => "未知"
+        };
+    }
+
+    private string FormatTime(double seconds)
+    {
+        var time = TimeSpan.FromSeconds(seconds);
+        if (time.Hours > 0)
+        {
+            return $"{time.Hours}:{time.Minutes:D2}:{time.Seconds:D2}";
+        }
+        return $"{time.Minutes}:{time.Seconds:D2}";
+    }
+
+    private string FormatClipDuration(Clip clip)
+    {
+        var duration = clip.Duration;
+        var time = TimeSpan.FromSeconds(duration);
+        return $"{time.Minutes:D2}:{time.Seconds:D2}";
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+        return text.Substring(0, maxLength) + "...";
+    }
+
+    private void ToggleTrackMute(string trackId)
+    {
+        EditorService.ToggleTrackMute(trackId);
+    }
+
+    private void ToggleTrackVisibility(string trackId)
+    {
+        EditorService.ToggleTrackVisibility(trackId);
+    }
+
+    private void StartResize(Clip clip, bool isLeft)
+    {
+        resizingClip = clip;
+        isResizingLeft = isLeft;
+        resizeStartTime = clip.StartTime;
+        resizeEndTime = clip.EndTime;
+        resizeStartX = 0;
+    }
+
+    private void StartResizeWithMouse(MouseEventArgs e, Clip clip, bool isLeft)
+    {
+        resizingClip = clip;
+        isResizingLeft = isLeft;
+        resizeStartTime = clip.StartTime;
+        resizeEndTime = clip.EndTime;
+        resizeStartX = e.ClientX;
+    }
+
+    private void OnMouseDown(MouseEventArgs e)
+    {
+        if (resizingClip != null)
+        {
+            resizeStartX = e.ClientX;
+        }
+    }
+
+    private void OnMouseMove(MouseEventArgs e)
+    {
+        if (resizingClip == null) return;
+
+        var deltaX = e.ClientX - resizeStartX;
+        var deltaTime = deltaX / pixelsPerSecond;
+
+        if (isResizingLeft)
+        {
+            var newStartTime = Math.Max(0, resizeStartTime + deltaTime);
+            if (newStartTime < resizeEndTime - 0.1)
+            {
+                resizingClip.StartTime = newStartTime;
+            }
+        }
+        else
+        {
+            var newEndTime = Math.Max(resizeStartTime + 0.1, resizeEndTime + deltaTime);
+            resizingClip.EndTime = newEndTime;
+        }
+
+        EditorService.UpdateProject();
+    }
+
+    private void OnMouseUp(MouseEventArgs e)
+    {
+        if (resizingClip != null)
+        {
+            resizingClip = null;
+            resizeStartX = 0;
+        }
+    }
+}

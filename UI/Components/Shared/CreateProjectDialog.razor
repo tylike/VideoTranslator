@@ -1,0 +1,45 @@
+@using MudBlazor
+@inject IDialogService DialogService
+@inject IProjectManagerService ProjectManagerService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" Label="项目名称" @bind-Value="_projectName" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">取消</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Confirm">创建</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance? MudDialog { get; set; }
+    private string _projectName = string.Empty;
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+
+    private async Task Confirm()
+    {
+        if (string.IsNullOrWhiteSpace(_projectName))
+        {
+            Snackbar.Add("请输入项目名称", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            await ProjectManagerService.CreateProjectAsync(_projectName);
+            Snackbar.Add($"项目 \"{_projectName}\" 创建成功", Severity.Success);
+            MudDialog?.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"创建项目失败: {ex.Message}", Severity.Error);
+        }
+    }
+}

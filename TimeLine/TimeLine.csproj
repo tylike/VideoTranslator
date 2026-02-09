@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>TimeLine</RootNamespace>
+	  <LangVersion>preview</LangVersion>
+    <AssemblyName>TimeLine</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Models\SegmentModel.cs" />
+    <Compile Remove="Models\TrackModel.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+	  <PackageReference Include="DevExpress.ExpressApp" Version="25.1.4" />
+	  <PackageReference Include="DevExpress.ExpressApp.Xpo" Version="25.1.4" />
+	  <PackageReference Include="DevExpress.Persistent.Base" Version="25.1.4" />
+	  <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+	  <PackageReference Include="NAudio" Version="2.2.1" />
+	  <PackageReference Include="Serilog" Version="4.3.0" />
+	  <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+	  <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+	  <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VT\VT.Module\VT.Module.csproj" />
+    <ProjectReference Include="..\SRT.Core\VideoTranslator.SRT.Core.csproj" />
+    <ProjectReference Include="..\Logic\VideoTranslator.Logic.csproj" />
+  </ItemGroup>
+
+</Project>

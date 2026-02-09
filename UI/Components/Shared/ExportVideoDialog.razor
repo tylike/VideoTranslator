@@ -1,0 +1,61 @@
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">导出视频</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Class="mb-4">配置视频导出设置</MudText>
+        
+        <MudTextField T="string" Label="文件名" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.VideoFile" />
+        
+        <MudSelect T="string" Label="输出格式" Variant="Variant.Outlined" Class="mt-4" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Movie">
+            <MudSelectItem T="string" Value="@("mp4")">MP4 (H.264)</MudSelectItem>
+            <MudSelectItem T="string" Value="@("avi")">AVI</MudSelectItem>
+            <MudSelectItem T="string" Value="@("mov")">MOV</MudSelectItem>
+            <MudSelectItem T="string" Value="@("mkv")">MKV</MudSelectItem>
+        </MudSelect>
+        
+        <MudSelect T="string" Label="视频质量" Variant="Variant.Outlined" Class="mt-4" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.HighQuality">
+            <MudSelectItem T="string" Value="@("high")">高质量 (1080p)</MudSelectItem>
+            <MudSelectItem T="string" Value="@("medium")">中等质量 (720p)</MudSelectItem>
+            <MudSelectItem T="string" Value="@("low")">低质量 (480p)</MudSelectItem>
+        </MudSelect>
+        
+        <MudSelect T="string" Label="音频格式" Variant="Variant.Outlined" Class="mt-4" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Audiotrack">
+            <MudSelectItem T="string" Value="@("aac")">AAC</MudSelectItem>
+            <MudSelectItem T="string" Value="@("mp3")">MP3</MudSelectItem>
+            <MudSelectItem T="string" Value="@("wav")">WAV</MudSelectItem>
+        </MudSelect>
+        
+        <MudCheckBox T="bool" Label="嵌入字幕" Class="mt-4" Color="Color.Primary" />
+        <MudCheckBox T="bool" Label="保留原音频" Class="mt-2" Color="Color.Primary" />
+        
+        <MudPaper Class="mt-4 pa-4" Elevation="1">
+            <MudText Typo="Typo.body2" Class="mb-2">导出信息</MudText>
+            <MudText Typo="Typo.body2">视频时长: 00:05:30</MudText>
+            <MudText Typo="Typo.body2">预计文件大小: ~150 MB</MudText>
+        </MudPaper>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">取消</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">导出</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance? MudDialog { get; set; }
+
+    private void Submit()
+    {
+        Snackbar.Add("视频导出成功", Severity.Success);
+        MudDialog?.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+}

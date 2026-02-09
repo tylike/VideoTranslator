@@ -1,0 +1,344 @@
+@inject ISnackbar Snackbar
+@inject IHttpClientFactory HttpClientFactory
+@inject IProjectManagerService ProjectManagerService
+@using MudBlazor
+@using MudBlazor.Extensions
+@using Microsoft.AspNetCore.Components.Forms
+@using VideoTranslator.Models
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">添加资源文件</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true">
+            <MudTabPanel Text="视频">
+                <div class="d-flex flex-column gap-4 mt-4">
+                    <MudText Typo="Typo.body2" Class="mb-2">支持的格式: MP4, AVI, MOV, MKV, WMV</MudText>
+                    <MudText Typo="Typo.body2">最大文件大小: 2GB</MudText>
+                    
+                    @if (_isUploadingVideo)
+                    {
+                        <div class="d-flex flex-column align-center justify-center py-4">
+                            <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+                            <MudText Class="mt-2">正在上传...</MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <InputFile OnChange="HandleVideoFileChanged" accept=".mp4,.avi,.mov,.mkv,.wmv" class="mud-input mud-input-outlined mud-input-adorned-end mud-input-textfield">
+                            <input class="mud-input-slot mud-input-root-input" />
+                        </InputFile>
+                        
+                        @if (_selectedVideoFile != null)
+                        {
+                            <MudPaper Class="pa-3" Elevation="0">
+                                <div class="d-flex align-center gap-2">
+                                    <MudIcon Icon="@Icons.Material.Filled.VideoFile" Color="Color.Primary" />
+                                    <div class="flex-grow-1">
+                                        <MudText Typo="Typo.body1">@_selectedVideoFile.Name</MudText>
+                                        <MudText Typo="Typo.caption">@FormatFileSize(_selectedVideoFile.Size)</MudText>
+                                    </div>
+                                </div>
+                            </MudPaper>
+                        }
+                        
+                        <MudButton Color="Color.Primary" OnClick="UploadVideo" Disabled="_isUploadingVideo || _selectedVideoFile == null" Variant="Variant.Filled">
+                            上传视频
+                        </MudButton>
+                    }
+                </div>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="音频">
+                <div class="d-flex flex-column gap-4 mt-4">
+                    <MudText Typo="Typo.body2" Class="mb-2">支持的格式: WAV, MP3, M4A, AAC, OGG</MudText>
+                    <MudText Typo="Typo.body2">最大文件大小: 500MB</MudText>
+                    
+                    @if (_isUploadingAudio)
+                    {
+                        <div class="d-flex flex-column align-center justify-center py-4">
+                            <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+                            <MudText Class="mt-2">正在上传...</MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <InputFile OnChange="HandleAudioFileChanged" accept=".wav,.mp3,.m4a,.aac,.ogg" class="mud-input mud-input-outlined mud-input-adorned-end mud-input-textfield">
+                            <input class="mud-input-slot mud-input-root-input" />
+                        </InputFile>
+                        
+                        @if (_selectedAudioFile != null)
+                        {
+                            <MudPaper Class="pa-3" Elevation="0">
+                                <div class="d-flex align-center gap-2">
+                                    <MudIcon Icon="@Icons.Material.Filled.AudioFile" Color="Color.Primary" />
+                                    <div class="flex-grow-1">
+                                        <MudText Typo="Typo.body1">@_selectedAudioFile.Name</MudText>
+                                        <MudText Typo="Typo.caption">@FormatFileSize(_selectedAudioFile.Size)</MudText>
+                                    </div>
+                                </div>
+                            </MudPaper>
+                        }
+                        
+                        <MudButton Color="Color.Primary" OnClick="UploadAudio" Disabled="_isUploadingAudio || _selectedAudioFile == null" Variant="Variant.Filled">
+                            上传音频
+                        </MudButton>
+                    }
+                </div>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="字幕">
+                <div class="d-flex flex-column gap-4 mt-4">
+                    <MudText Typo="Typo.body2" Class="mb-2">支持的格式: SRT, ASS, VTT</MudText>
+                    <MudText Typo="Typo.body2">最大文件大小: 10MB</MudText>
+                    
+                    @if (_isUploadingSubtitle)
+                    {
+                        <div class="d-flex flex-column align-center justify-center py-4">
+                            <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+                            <MudText Class="mt-2">正在上传...</MudText>
+                        </div>
+                    }
+                    else
+                    {
+                        <InputFile OnChange="HandleSubtitleFileChanged" accept=".srt,.ass,.vtt" class="mud-input mud-input-outlined mud-input-adorned-end mud-input-textfield">
+                            <input class="mud-input-slot mud-input-root-input" />
+                        </InputFile>
+                        
+                        @if (_selectedSubtitleFile != null)
+                        {
+                            <MudPaper Class="pa-3" Elevation="0">
+                                <div class="d-flex align-center gap-2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Subtitles" Color="Color.Primary" />
+                                    <div class="flex-grow-1">
+                                        <MudText Typo="Typo.body1">@_selectedSubtitleFile.Name</MudText>
+                                        <MudText Typo="Typo.caption">@FormatFileSize(_selectedSubtitleFile.Size)</MudText>
+                                    </div>
+                                </div>
+                            </MudPaper>
+                        }
+                        
+                        <MudButton Color="Color.Primary" OnClick="UploadSubtitle" Disabled="_isUploadingSubtitle || _selectedSubtitleFile == null" Variant="Variant.Filled">
+                            上传字幕
+                        </MudButton>
+                    }
+                </div>
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_isUploadingVideo || _isUploadingAudio || _isUploadingSubtitle">关闭</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<style>
+    .mud-input-slot {
+        cursor: pointer;
+        padding: 12px 16px;
+        border: 1px solid var(--mud-palette-action-disabled);
+        border-radius: 4px;
+        background-color: var(--mud-palette-surface);
+    }
+    .mud-input-slot:hover {
+        background-color: var(--mud-palette-action-hover);
+        border-color: var(--mud-palette-primary);
+    }
+</style>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance? MudDialog { get; set; }
+    [Parameter]
+    public string ProjectId { get; set; } = string.Empty;
+    
+    private IBrowserFile? _selectedVideoFile;
+    private IBrowserFile? _selectedAudioFile;
+    private IBrowserFile? _selectedSubtitleFile;
+    private bool _isUploadingVideo;
+    private bool _isUploadingAudio;
+    private bool _isUploadingSubtitle;
+
+    private void HandleVideoFileChanged(InputFileChangeEventArgs e)
+    {
+        _selectedVideoFile = e.File;
+        StateHasChanged();
+    }
+
+    private void HandleAudioFileChanged(InputFileChangeEventArgs e)
+    {
+        _selectedAudioFile = e.File;
+        StateHasChanged();
+    }
+
+    private void HandleSubtitleFileChanged(InputFileChangeEventArgs e)
+    {
+        _selectedSubtitleFile = e.File;
+        StateHasChanged();
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private async Task UploadVideo()
+    {
+        if (_selectedVideoFile == null)
+        {
+            Snackbar.Add("请选择文件", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(ProjectId))
+        {
+            Snackbar.Add("项目ID不能为空", Severity.Error);
+            return;
+        }
+
+        _isUploadingVideo = true;
+        StateHasChanged();
+
+        try
+        {
+            var httpClient = HttpClientFactory.CreateClient("UploadClient");
+            var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(_selectedVideoFile.OpenReadStream(2L * 1024 * 1024 * 1024));
+            content.Add(fileContent, "file", _selectedVideoFile.Name);
+            content.Add(new StringContent(ProjectId), "projectId");
+
+            var response = await httpClient.PostAsync("/api/upload/video", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("视频上传成功", Severity.Success);
+                _selectedVideoFile = null;
+            }
+            else
+            {
+                Snackbar.Add($"上传失败: {responseContent}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"上传失败: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isUploadingVideo = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task UploadAudio()
+    {
+        if (_selectedAudioFile == null)
+        {
+            Snackbar.Add("请选择文件", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(ProjectId))
+        {
+            Snackbar.Add("项目ID不能为空", Severity.Error);
+            return;
+        }
+
+        _isUploadingAudio = true;
+        StateHasChanged();
+
+        try
+        {
+            var httpClient = HttpClientFactory.CreateClient("UploadClient");
+            var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(_selectedAudioFile.OpenReadStream(500L * 1024 * 1024));
+            content.Add(fileContent, "file", _selectedAudioFile.Name);
+            content.Add(new StringContent(ProjectId), "projectId");
+
+            var response = await httpClient.PostAsync("/api/upload/audio", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("音频上传成功", Severity.Success);
+                _selectedAudioFile = null;
+            }
+            else
+            {
+                Snackbar.Add($"上传失败: {responseContent}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"上传失败: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isUploadingAudio = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task UploadSubtitle()
+    {
+        if (_selectedSubtitleFile == null)
+        {
+            Snackbar.Add("请选择文件", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(ProjectId))
+        {
+            Snackbar.Add("项目ID不能为空", Severity.Error);
+            return;
+        }
+
+        _isUploadingSubtitle = true;
+        StateHasChanged();
+
+        try
+        {
+            var httpClient = HttpClientFactory.CreateClient("UploadClient");
+            var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(_selectedSubtitleFile.OpenReadStream(10L * 1024 * 1024));
+            content.Add(fileContent, "file", _selectedSubtitleFile.Name);
+            content.Add(new StringContent(ProjectId), "projectId");
+
+            var response = await httpClient.PostAsync("/api/upload/subtitle", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("字幕上传成功", Severity.Success);
+                _selectedSubtitleFile = null;
+            }
+            else
+            {
+                Snackbar.Add($"上传失败: {responseContent}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"上传失败: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isUploadingSubtitle = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+}

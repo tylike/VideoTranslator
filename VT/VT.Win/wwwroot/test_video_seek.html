@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频定位测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .video-container {
+            margin: 20px 0;
+            background-color: #000;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        video {
+            width: 100%;
+            max-height: 500px;
+            display: block;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #1e7e34;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .btn-warning:hover {
+            background-color: #d39e00;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #a71d2a;
+        }
+        .info-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .info-panel h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .info-item {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: white;
+            border-radius: 3px;
+        }
+        .log-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-panel h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: white;
+            border-left: 3px solid #007bff;
+            font-family: monospace;
+            font-size: 11px;
+        }
+        .log-entry.error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .log-entry.success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .log-entry.warning {
+            border-left-color: #ffc107;
+            background-color: #fff3cd;
+        }
+        input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            width: 100px;
+        }
+        label {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>视频定位测试</h1>
+        
+        <div class="video-container">
+            <video id="videoPlayer" controls crossorigin="anonymous">
+                <source src="Dh52aZ8OFFE_fixed.mp4" type="video/mp4">
+                您的浏览器不支持视频播放。
+            </video>
+        </div>
+        
+        <div class="controls">
+            <h3>控制按钮</h3>
+            <div class="button-group">
+                <button class="btn-primary" onclick="playVideo()">播放</button>
+                <button class="btn-warning" onclick="pauseVideo()">暂停</button>
+                <button class="btn-danger" onclick="stopVideo()">停止</button>
+            </div>
+            
+            <h3>定位测试</h3>
+            <div class="button-group">
+                <button class="btn-success" onclick="seekTo(0)">定位到 0秒</button>
+                <button class="btn-success" onclick="seekTo(10)">定位到 10秒</button>
+                <button class="btn-success" onclick="seekTo(20)">定位到 20秒</button>
+                <button class="btn-success" onclick="seekTo(30)">定位到 30秒</button>
+                <button class="btn-success" onclick="seekTo(60)">定位到 60秒</button>
+                <button class="btn-success" onclick="seekTo(120)">定位到 120秒</button>
+            </div>
+            
+            <h3>自定义定位</h3>
+            <div class="button-group">
+                <label>秒数:</label>
+                <input type="number" id="customTime" value="50" min="0" step="0.1">
+                <button class="btn-primary" onclick="seekToCustom()">定位</button>
+            </div>
+        </div>
+        
+        <div class="info-panel">
+            <h3>视频信息</h3>
+            <div class="info-item" id="info-readyState">readyState: -</div>
+            <div class="info-item" id="info-duration">duration: -</div>
+            <div class="info-item" id="info-currentTime">currentTime: -</div>
+            <div class="info-item" id="info-paused">paused: -</div>
+            <div class="info-item" id="info-seeking">seeking: -</div>
+            <div class="info-item" id="info-seekable">seekable: -</div>
+            <div class="info-item" id="info-seekableRange">seekable range: -</div>
+        </div>
+        
+        <div class="log-panel">
+            <h3>操作日志</h3>
+            <div id="logContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('videoPlayer');
+        const logContainer = document.getElementById('logContainer');
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateInfo() {
+            document.getElementById('info-readyState').textContent = `readyState: ${video.readyState}`;
+            document.getElementById('info-duration').textContent = `duration: ${video.duration.toFixed(2)}s`;
+            document.getElementById('info-currentTime').textContent = `currentTime: ${video.currentTime.toFixed(2)}s`;
+            document.getElementById('info-paused').textContent = `paused: ${video.paused}`;
+            document.getElementById('info-seeking').textContent = `seeking: ${video.seeking}`;
+            document.getElementById('info-seekable').textContent = `seekable: ${video.seekable}`;
+            
+            if (video.seekable && video.seekable.length > 0) {
+                const start = video.seekable.start(0);
+                const end = video.seekable.end(video.seekable.length - 1);
+                document.getElementById('info-seekableRange').textContent = `seekable range: ${start.toFixed(2)}s - ${end.toFixed(2)}s`;
+            } else {
+                document.getElementById('info-seekableRange').textContent = 'seekable range: N/A';
+            }
+        }
+        
+        function playVideo() {
+            log('播放视频', 'success');
+            video.play();
+        }
+        
+        function pauseVideo() {
+            log('暂停视频', 'warning');
+            video.pause();
+        }
+        
+        function stopVideo() {
+            log('停止视频', 'error');
+            video.pause();
+            video.currentTime = 0;
+        }
+        
+        function seekTo(seconds) {
+            log(`=== 开始定位到 ${seconds}秒 ===`, 'info');
+            
+            log(`定位前: currentTime = ${video.currentTime.toFixed(2)}s, paused = ${video.paused}, seeking = ${video.seeking}`);
+            
+            try {
+                video.currentTime = seconds;
+                log(`设置 currentTime = ${seconds}s`, 'success');
+                
+                setTimeout(() => {
+                    log(`100ms后: currentTime = ${video.currentTime.toFixed(2)}s`, 'info');
+                }, 100);
+                
+                setTimeout(() => {
+                    log(`500ms后: currentTime = ${video.currentTime.toFixed(2)}s`, 'info');
+                }, 500);
+                
+                setTimeout(() => {
+                    log(`1000ms后: currentTime = ${video.currentTime.toFixed(2)}s`, 'info');
+                }, 1000);
+            } catch (error) {
+                log(`定位失败: ${error.message}`, 'error');
+            }
+        }
+        
+        function seekToCustom() {
+            const seconds = parseFloat(document.getElementById('customTime').value);
+            if (!isNaN(seconds) && seconds >= 0) {
+                seekTo(seconds);
+            } else {
+                log('无效的时间值', 'error');
+            }
+        }
+        
+        video.addEventListener('loadedmetadata', () => {
+            log('视频元数据已加载', 'success');
+            updateInfo();
+        });
+        
+        video.addEventListener('canplay', () => {
+            log('视频可以播放', 'success');
+            updateInfo();
+        });
+        
+        video.addEventListener('timeupdate', () => {
+            updateInfo();
+        });
+        
+        video.addEventListener('seeking', () => {
+            log('seeking 事件触发', 'warning');
+        });
+        
+        video.addEventListener('seeked', () => {
+            log(`seeked 事件触发: currentTime = ${video.currentTime.toFixed(2)}s`, 'success');
+        });
+        
+        video.addEventListener('play', () => {
+            log('play 事件触发', 'success');
+            updateInfo();
+        });
+        
+        video.addEventListener('pause', () => {
+            log('pause 事件触发', 'warning');
+            updateInfo();
+        });
+        
+        video.addEventListener('error', (e) => {
+            log(`视频错误: ${e.message}`, 'error');
+        });
+        
+        setInterval(updateInfo, 100);
+        
+        log('页面加载完成，等待视频加载...', 'info');
+    </script>
+</body>
+</html>

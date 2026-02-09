@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+	  <LangVersion>preview</LangVersion>
+    <ApplicationIcon />
+    <StartupObject>SimpleVideoPlayer.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Controls\PlaybackControlPanel.cs.bak">
+      <SubType>Component</SubType>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LibVLCSharp" Version="3.9.5" />
+    <PackageReference Include="LibVLCSharp.WinForms" Version="3.9.5" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.21" />
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Common.Logging\Common.Logging.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Controls\VideoDisplayPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Controls\VideoPlayerToolbar.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="VideoPlayer.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,44 @@
+@inject ISnackbar Snackbar
+@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">从 YouTube 导入</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Class="mb-4">输入 YouTube 视频链接</MudText>
+        <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudText Typo="Typo.body2" Class="mb-2">支持格式:</MudText>
+            <MudText Typo="Typo.body2">• https://www.youtube.com/watch?v=xxx</MudText>
+            <MudText Typo="Typo.body2">• https://youtu.be/xxx</MudText>
+        </MudPaper>
+        <MudTextField T="string" Label="YouTube 链接" Variant="Variant.Outlined" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Link" Placeholder="https://www.youtube.com/watch?v=..." />
+        <MudTextField T="string" Label="视频标题" Variant="Variant.Outlined" Class="mt-4" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.VideoLabel" />
+        <MudSelect T="string" Label="视频质量" Variant="Variant.Outlined" Class="mt-4" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.HighQuality">
+            <MudSelectItem T="string" Value="@("1080p")">1080p (高清)</MudSelectItem>
+            <MudSelectItem T="string" Value="@("720p")">720p (标清)</MudSelectItem>
+            <MudSelectItem T="string" Value="@("480p")">480p (流畅)</MudSelectItem>
+            <MudSelectItem T="string" Value="@("360p")">360p (极速)</MudSelectItem>
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">取消</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">下载并导入</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance? MudDialog { get; set; }
+
+    private void Submit()
+    {
+        Snackbar.Add("YouTube 视频导入成功", Severity.Success);
+        MudDialog?.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+}

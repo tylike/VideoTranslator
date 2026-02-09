@@ -1,0 +1,17 @@
+<ContentControl x:Class="TimeLine.Controls.SimpleTrackControl"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                HorizontalAlignment="Left">
+    <Border Name="边框"
+            Background="White"
+            BorderBrush="#CCCCCC"
+            BorderThickness="0,0,0,1"
+            VerticalAlignment="Stretch"
+            HorizontalAlignment="Left"
+            ClipToBounds="True">
+        <Canvas Name="项目画布"
+                VerticalAlignment="Stretch"
+                HorizontalAlignment="Left"
+                ClipToBounds="True"/>
+    </Border>
+</ContentControl>

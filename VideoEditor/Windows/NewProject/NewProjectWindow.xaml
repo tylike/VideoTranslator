@@ -1,0 +1,263 @@
+﻿<Window x:Class="VideoEditor.Windows.NewProjectWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:VideoEditor.Windows"
+        Title="新建项目"
+        WindowStartupLocation="CenterOwner"
+        Width="800"
+        Height="700"
+        ResizeMode="CanResize">
+    <local:DialogTemplate x:Name="_dialogTemplate">
+        <local:DialogTemplate.Buttons>
+            <StackPanel Orientation="Horizontal">
+                <Button Content="确定" Width="80" Height="30" Margin="0,0,10,0" IsDefault="True" Click="OkButton_Click"/>
+                <Button Content="取消" Width="80" Height="30" Margin="0,0,0,0" IsCancel="True" Click="CancelButton_Click"/>
+            </StackPanel>
+        </local:DialogTemplate.Buttons>
+
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="120"/>
+                <RowDefinition Height="60"/>
+                <RowDefinition Height="35"/>
+                <RowDefinition Height="35"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="35"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="35"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="35"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="35"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0"
+                       Text="项目信息"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Margin="0,0,0,20"/>
+
+            <GroupBox Grid.Row="1"
+                      Header="语言设置"
+                      Margin="0,0,0,0">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="40"/>
+                        <RowDefinition Height="40"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="源视频语言:"
+                                   VerticalAlignment="Center"/>
+                        <ComboBox x:Name="_sourceLanguageComboBox"
+                                  Grid.Column="1"
+                                  Height="25"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="目标视频语言:"
+                                   VerticalAlignment="Center"/>
+                        <ComboBox x:Name="_targetLanguageComboBox"
+                                  Grid.Column="1"
+                                  Height="25"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Grid.Row="2"
+                      Header="输入模式"
+                      Margin="0,0,0,0">
+                <StackPanel>
+                    <RadioButton x:Name="_videoOnlyMode"
+                                Content="仅视频（自动提取音频）"
+                                IsChecked="True"
+                                Margin="0,0,0,10"
+                                Checked="InputMode_Checked"/>
+                    <RadioButton x:Name="_videoPlusAudioMode"
+                                Content="无声视频 + 音频文件"
+                                IsChecked="False"
+                                Margin="0,0,0,0"
+                                Checked="InputMode_Checked"/>
+                </StackPanel>
+            </GroupBox>
+
+            <Grid Grid.Row="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="项目名称:"
+                           VerticalAlignment="Center"/>
+                <TextBox x:Name="_projectNameTextBox"
+                         Grid.Column="1"
+                         Text="新建视频项目"
+                         Height="25"
+                         VerticalAlignment="Center"/>
+            </Grid>
+
+            <Grid Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="视频文件:"
+                           VerticalAlignment="Center"/>
+                <TextBox x:Name="_videoPathTextBox"
+                         Grid.Column="1"
+                         IsReadOnly="True"
+                         Margin="0,0,10,0"
+                         Height="25"
+                         VerticalAlignment="Center"/>
+                <Button x:Name="_browseVideoButton"
+                        Grid.Column="2"
+                        Content="浏览..."
+                        Width="80"
+                        Height="25"
+                        VerticalAlignment="Center"
+                        Click="BrowseVideoButton_Click"/>
+            </Grid>
+
+            <TextBlock x:Name="_videoInfoTextBlock"
+                       Grid.Row="5"
+                       Text=""
+                       Foreground="Gray"
+                       Margin="0,0,0,0"
+                       TextWrapping="Wrap"/>
+
+            <Grid x:Name="_audioFileGrid"
+                  Grid.Row="6"
+                  Margin="0,0,0,0"
+                  Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="音频文件:"
+                           VerticalAlignment="Center"/>
+                <TextBox x:Name="_audioPathTextBox"
+                         Grid.Column="1"
+                         IsReadOnly="True"
+                         Margin="0,0,10,0"
+                         Height="25"
+                         VerticalAlignment="Center"/>
+                <Button x:Name="_browseAudioButton"
+                        Grid.Column="2"
+                        Content="浏览..."
+                        Width="80"
+                        Height="25"
+                        VerticalAlignment="Center"
+                        Click="BrowseAudioButton_Click"/>
+            </Grid>
+
+            <TextBlock x:Name="_audioInfoTextBlock"
+                       Grid.Row="7"
+                       Text=""
+                       Foreground="Gray"
+                       Margin="0,0,0,0"
+                       TextWrapping="Wrap"
+                       Visibility="Collapsed"/>
+
+            <Grid Grid.Row="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="字幕文件:"
+                           VerticalAlignment="Center"/>
+                <TextBox x:Name="_subtitlePathTextBox"
+                         Grid.Column="1"
+                         IsReadOnly="True"
+                         Margin="0,0,10,0"
+                         Height="25"
+                         VerticalAlignment="Center"/>
+                <Button x:Name="_browseSubtitleButton"
+                        Grid.Column="2"
+                        Content="浏览..."
+                        Width="80"
+                        Height="25"
+                        VerticalAlignment="Center"
+                        Click="BrowseSubtitleButton_Click"/>
+            </Grid>
+
+            <TextBlock x:Name="_subtitleInfoTextBlock"
+                       Grid.Row="9"
+                       Text=""
+                       Foreground="Gray"
+                       Margin="0,0,0,0"
+                       TextWrapping="Wrap"/>
+
+            <Grid Grid.Row="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="目标字幕:"
+                           VerticalAlignment="Center"/>
+                <TextBox x:Name="_translatedSubtitlePathTextBox"
+                         Grid.Column="1"
+                         IsReadOnly="True"
+                         Margin="0,0,10,0"
+                         Height="25"
+                         VerticalAlignment="Center"/>
+                <Button x:Name="_browseTranslatedSubtitleButton"
+                        Grid.Column="2"
+                        Content="浏览..."
+                        Width="80"
+                        Height="25"
+                        VerticalAlignment="Center"
+                        Click="BrowseTranslatedSubtitleButton_Click"/>
+            </Grid>
+
+            <TextBlock x:Name="_translatedSubtitleInfoTextBlock"
+                       Grid.Row="11"
+                       Text=""
+                       Foreground="Gray"
+                       Margin="0,0,0,0"
+                       TextWrapping="Wrap"/>
+
+            <Grid Grid.Row="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="项目路径:"
+                           VerticalAlignment="Center"/>
+                <TextBox x:Name="_projectPathTextBox"
+                         Grid.Column="1"
+                         IsReadOnly="True"
+                         Height="25"
+                         VerticalAlignment="Center"/>
+            </Grid>
+
+            <TextBlock Grid.Row="13"
+                       Text="* 项目路径将自动生成在默认目录下"
+                       Foreground="Gray"
+                       FontSize="12"
+                       VerticalAlignment="Top"/>
+        </Grid>
+    </local:DialogTemplate>
+</Window>

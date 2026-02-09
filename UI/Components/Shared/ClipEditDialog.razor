@@ -1,0 +1,105 @@
+@inject IVideoEditorService EditorService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@using VideoTranslator.Models
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="片段名称" @bind-Value="clip.Name" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="6">
+                <MudTextField T="double" Label="开始时间 (秒)" @bind-Value="clip.StartTime" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="6">
+                <MudTextField T="double" Label="结束时间 (秒)" @bind-Value="clip.EndTime" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="double" Label="时长 (秒)" Value="@duration" Variant="Variant.Outlined" Disabled="true" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="内容" @bind-Value="clip.Content" Variant="Variant.Outlined" Lines="3" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudSlider T="double" Min="0" Max="2" Step="0.1" @bind-Value="clip.Volume" Variant="Variant.Outlined" Color="Color.Primary">
+                    音量
+                </MudSlider>
+            </MudItem>
+            <MudItem xs="6">
+                <MudCheckBox T="bool" Label="静音" @bind-Value="clip.IsMuted" Color="Color.Primary" />
+            </MudItem>
+            <MudItem xs="6">
+                <MudCheckBox T="bool" Label="可见" @bind-Value="clip.IsVisible" Color="Color.Primary" />
+            </MudItem>
+            @if (clip.IsModified)
+            {
+                <MudItem xs="12">
+                    <MudAlert Severity="Severity.Info" Class="mt-2">
+                        <MudText Typo="Typo.body2">
+                            原始时长: @clip.OriginalDuration?.ToString("F2") 秒<br />
+                            当前时长: @clip.Duration.ToString("F2") 秒<br />
+                            差异: @((clip.Duration - (clip.OriginalDuration ?? 0)).ToString("F2")) 秒
+                        </MudText>
+                    </MudAlert>
+                </MudItem>
+            }
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">取消</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">保存</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    IMudDialogInstance? MudDialog { get; set; }
+
+    [Parameter]
+    public Clip Clip { get; set; } = new();
+
+    private Clip clip = new();
+    private double duration => clip.Duration;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        clip = new Clip
+        {
+            Id = Clip.Id,
+            Name = Clip.Name,
+            StartTime = Clip.StartTime,
+            EndTime = Clip.EndTime,
+            Content = Clip.Content,
+            Volume = Clip.Volume,
+            IsMuted = Clip.IsMuted,
+            IsVisible = Clip.IsVisible,
+            OriginalDuration = Clip.OriginalDuration,
+            AudioFilePath = Clip.AudioFilePath,
+            IsGenerated = Clip.IsGenerated,
+            TranslatedContent = Clip.TranslatedContent
+        };
+    }
+
+    private void Submit()
+    {
+        EditorService.UpdateClip(clip.Id, c =>
+        {
+            c.Name = clip.Name;
+            c.StartTime = clip.StartTime;
+            c.EndTime = clip.EndTime;
+            c.Content = clip.Content;
+            c.Volume = clip.Volume;
+            c.IsMuted = clip.IsMuted;
+            c.IsVisible = clip.IsVisible;
+        });
+        MudDialog?.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+}

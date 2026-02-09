@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\IProgress\IProgress.csproj" />
+    <ProjectReference Include="..\..\SRT.Core\VideoTranslator.SRT.Core.csproj" />
+    <ProjectReference Include="..\..\VT.Core\VT.Core.csproj" />
+  </ItemGroup>
+
+</Project>

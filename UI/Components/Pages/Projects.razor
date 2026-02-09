@@ -1,0 +1,197 @@
+@page "/projects"
+@using MudBlazor
+@using MudBlazor.Extensions
+@inject IProjectManagerService ProjectManagerService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>项目管理</PageTitle>
+
+<MudContainer Class="mt-8">
+    <MudGrid>
+        <MudItem xs="12" Class="d-flex justify-space-between align-center mb-4">
+            <MudText Typo="Typo.h4">项目管理</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+                新建项目
+            </MudButton>
+        </MudItem>
+
+        <MudItem xs="12">
+            @if (_isLoading)
+            {
+                <MudGrid Class="justify-center">
+                    <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+                </MudGrid>
+            }
+            else if (_projects.Count == 0)
+            {
+                <MudPaper Class="pa-8 text-center" Elevation="2">
+                    <MudIcon Icon="@Icons.Material.Filled.FolderOff" Size="Size.Large" Class="mb-4" />
+                    <MudText Typo="Typo.h6" Class="mb-2">暂无项目</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4">点击上方按钮创建新项目</MudText>
+                </MudPaper>
+            }
+            else
+            {
+                <MudGrid>
+                    @foreach (var project in _projects)
+                    {
+                        <MudItem xs="12" sm="6" md="4" lg="3">
+                            <MudCard Class="project-card h-100" Elevation="2">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6" Class="text-truncate">@project.ProjectName</MudText>
+                                        <MudText Typo="Typo.caption" Class="text-muted">@project.ProjectId.Substring(0, 8)...</MudText>
+                                    </CardHeaderContent>
+                                    <CardHeaderActions>
+                                        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" OnClick="@((e) => OpenProjectMenu(e, project))" />
+                                    </CardHeaderActions>
+                                </MudCardHeader>
+                                <MudCardContent Class="flex-grow-1">
+                                    <MudText Typo="Typo.body2" Class="mb-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="mr-1" />
+                                        创建时间: @project.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                                    </MudText>
+                                    <MudText Typo="Typo.body2" Class="mb-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.Update" Size="Size.Small" Class="mr-1" />
+                                        更新时间: @(project.UpdatedAt?.ToString("yyyy-MM-dd HH:mm") ?? "未更新")
+                                    </MudText>
+                                    <MudText Typo="Typo.body2">
+                                        <MudIcon Icon="@Icons.Material.Filled.VideoLibrary" Size="Size.Small" Class="mr-1" />
+                                        状态: @GetStatusText(project.Status)
+                                    </MudText>
+                                </MudCardContent>
+                                <MudCardActions>
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="@(() => OpenProject(project.ProjectId))">
+                                        打开项目
+                                    </MudButton>
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+<MudPopover Open="_menuOpen" OpenChanged="@((bool val) => _menuOpen = val)" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter">
+    <MudList Clickable="true" T="string">
+        <MudListItem T="string" OnClick="OpenProject">
+            <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Class="mr-2" />
+            <MudText>打开项目</MudText>
+        </MudListItem>
+        <MudListItem T="string" OnClick="DeleteProject">
+            <MudIcon Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Class="mr-2" />
+            <MudText Class="text-error">删除项目</MudText>
+        </MudListItem>
+    </MudList>
+</MudPopover>
+
+<style>
+    .project-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+
+    .project-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+</style>
+
+@code {
+    private List<VideoProject> _projects = new();
+    private bool _isLoading = true;
+    private bool _menuOpen = false;
+    private VideoProject? _selectedProject;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjectsAsync();
+    }
+
+    private async Task LoadProjectsAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _projects = await ProjectManagerService.GetAllProjectsAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"加载项目失败: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small };
+        var dialog = await DialogService.ShowAsync<CreateProjectDialog>("新建项目", options);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            await LoadProjectsAsync();
+        }
+    }
+
+    private void OpenProjectMenu(EventArgs e, VideoProject project)
+    {
+        _selectedProject = project;
+        _menuOpen = true;
+    }
+
+    private void OpenProject()
+    {
+        _menuOpen = false;
+        if (_selectedProject != null)
+        {
+            NavigationManager.NavigateTo($"/editor/{_selectedProject.ProjectId}");
+        }
+    }
+
+    private void OpenProject(string projectId)
+    {
+        NavigationManager.NavigateTo($"/editor/{projectId}");
+    }
+
+    private async Task DeleteProject()
+    {
+        _menuOpen = false;
+        if (_selectedProject != null)
+        {
+            var parameters = new DialogParameters
+            {
+                ["ProjectId"] = _selectedProject.ProjectId,
+                ["ProjectName"] = _selectedProject.ProjectName
+            };
+            var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small };
+            var dialog = await DialogService.ShowAsync<DeleteProjectDialog>("确认删除", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result!.Canceled)
+            {
+                await LoadProjectsAsync();
+            }
+        }
+    }
+
+    private string GetStatusText(VideoStatus status)
+    {
+        return status switch
+        {
+            VideoStatus.Idle => "空闲",
+            VideoStatus.Downloading => "下载中",
+            VideoStatus.Processing => "处理中",
+            VideoStatus.Completed => "已完成",
+            VideoStatus.Error => "错误",
+            _ => "未知"
+        };
+    }
+}

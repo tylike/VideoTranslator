@@ -1,0 +1,485 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application Title="VT">
+  <Options>
+    <LayoutManagerOptions RequiredFieldMark="*" />
+  </Options>
+  <SchemaModules>
+    <SchemaModule Name="CloneObjectModule" Version="25.1.4.0" IsNewNode="True" />
+    <SchemaModule Name="SystemModule" Version="25.1.4.0" IsNewNode="True" />
+  </SchemaModules>
+  <Views>
+    <ListView Id="VideoProject_Clips_ListView">
+      <Columns>
+        <ColumnInfo Id="结束时间" PropertyName="SourceSRTClip.End" Index="-1" IsNewNode="True" />
+        <ColumnInfo Id="AdjustedTargetAudioClip" Index="-1" />
+        <ColumnInfo Id="AudioAdjusted" Index="-1" Width="62" />
+        <ColumnInfo Id="GenerationStatus" Index="-1" Width="140" />
+        <ColumnInfo Id="SourceAudioClip" Index="-1" />
+        <ColumnInfo Id="SourceSRTClip" Index="-1" />
+        <ColumnInfo Id="TargetAudioClip" Index="-1" />
+        <ColumnInfo Id="TargetSRTClip" Index="-1" />
+        <ColumnInfo Id="Index" Index="0" />
+        <ColumnInfo Id="源字幕" PropertyName="SourceSRTClip.Text" Caption="源字幕" Index="1" Width="121" IsNewNode="True" />
+        <ColumnInfo Id="开始时间" PropertyName="SourceSRTClip.Start" Index="2" IsNewNode="True" />
+        <ColumnInfo Id="源SRT时长" PropertyName="SourceSRTClip.Duration" Index="3" Caption="源SRT时长" IsNewNode="True" />
+        <ColumnInfo Id="源音时长" PropertyName="SourceAudioClip.Duration" Index="4" Caption="源音时长" IsNewNode="True" />
+        <ColumnInfo Id="目标字幕" PropertyName="TargetSRTClip.Text" Caption="目标字幕" Index="5" IsNewNode="True" />
+        <ColumnInfo Id="SpeedMultiplier" Index="6" Width="69" />
+        <ColumnInfo Id="TTS时长" PropertyName="TargetAudioClip.Duration" Index="7" Caption="TTS时长" IsNewNode="True" />
+        <ColumnInfo Id="调后时长" PropertyName="AdjustedTargetAudioClip.Duration" Index="9" Caption="调后时长" IsNewNode="True" />
+      </Columns>
+      <BandsLayout Enable="False">
+        <Band Id="输入" Index="1" IsNewNode="True" />
+        <Band Id="目标" Index="2" IsNewNode="True" />
+      </BandsLayout>
+    </ListView>
+    <DetailView Id="VideoProject_DetailView">
+      <Items>
+        <PropertyEditor Id="OutputAudioPath" Caption="08.输出音频路径" />
+        <PropertyEditor Id="OutputVideoPath" Caption="09.输出视频路径" />
+        <PropertyEditor Id="ProjectPath" Caption="00.项目路径" />
+        <PropertyEditor Id="SourceAudioPath" Caption="03.源音频路径" />
+        <PropertyEditor Id="SourceBackgroundAudioPath" Caption="05.背景音频" />
+        <PropertyEditor Id="SourceMutedVideoPath" Caption="02.静音视频路径" />
+        <PropertyEditor Id="SourceSubtitlePath" Caption="06.源字幕路径" />
+        <PropertyEditor Id="SourceVideoPath" Caption="01.源视频路径" />
+        <PropertyEditor Id="SourceVocalAudioPath" Caption="04.人声音频" />
+        <PropertyEditor Id="TranslatedSubtitlePath" Caption="07.翻译字幕路径" />
+      </Items>
+      <Layout>
+        <LayoutGroup Id="Main">
+          <TabbedGroup Id="Tabs" Index="0">
+            <LayoutGroup Id="信息" ShowCaption="True" Index="3" IsNewNode="True">
+              <LayoutGroup Id="SimpleEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutGroup Id="VideoProject" Index="0" ShowCaption="False" IsNewNode="True">
+                  <LayoutItem Id="Oid" ViewItem="Oid" Index="0" IsNewNode="True" />
+                  <LayoutItem Id="ProjectName" ViewItem="ProjectName" ShowCaption="" Index="1" IsNewNode="True" />
+                  <LayoutItem Id="ProjectPath" ViewItem="ProjectPath" ShowCaption="" Index="2" IsNewNode="True" />
+                  <LayoutItem Id="CurrentStatus" ViewItem="CurrentStatus" ShowCaption="" Index="3" IsNewNode="True" />
+                </LayoutGroup>
+                <LayoutGroup Id="VTBaseObject" Index="1" ShowCaption="False" IsNewNode="True">
+                  <LayoutItem Id="CreateTime" ViewItem="CreateTime" ShowCaption="" Index="0" IsNewNode="True" />
+                  <LayoutItem Id="LastUpdateTime" ViewItem="LastUpdateTime" ShowCaption="" Index="1" IsNewNode="True" />
+                </LayoutGroup>
+                <LayoutGroup Id="XPObject" Index="2" ShowCaption="False" Caption="Oid" IsNewNode="True">
+                  <LayoutItem Id="TranslationStyle" ViewItem="TranslationStyle" Index="0" IsNewNode="True" />
+                </LayoutGroup>
+              </LayoutGroup>
+              <LayoutGroup Id="SizeableEditors" Index="1" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="SourceVideoPath" ViewItem="SourceVideoPath" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="SourceMutedVideoPath" ViewItem="SourceMutedVideoPath" Index="1" IsNewNode="True" />
+                <LayoutItem Id="SourceAudioPath" ViewItem="SourceAudioPath" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="SourceVocalAudioPath" ViewItem="SourceVocalAudioPath" Index="3" IsNewNode="True" />
+                <LayoutItem Id="SourceBackgroundAudioPath" ViewItem="SourceBackgroundAudioPath" Index="4" IsNewNode="True" />
+                <LayoutItem Id="SourceSubtitlePath" ViewItem="SourceSubtitlePath" ShowCaption="" Index="5" IsNewNode="True" />
+                <LayoutItem Id="TranslatedSubtitlePath" ViewItem="TranslatedSubtitlePath" ShowCaption="" Index="6" IsNewNode="True" />
+                <LayoutItem Id="OutputAudioPath" ViewItem="OutputAudioPath" ShowCaption="" Index="7" IsNewNode="True" />
+                <LayoutItem Id="OutputVideoPath" ViewItem="OutputVideoPath" Index="8" IsNewNode="True" />
+                <LayoutItem Id="EncodingPreset" ViewItem="EncodingPreset" Index="9" IsNewNode="True" />
+                <LayoutItem Id="UseGPU" ViewItem="UseGPU" Index="10" IsNewNode="True" />
+                <LayoutItem Id="FastSubtitleRendering" ViewItem="FastSubtitleRendering" Index="11" IsNewNode="True" />
+                <LayoutItem Id="CustomSystemPrompt" ViewItem="CustomSystemPrompt" Index="12" IsNewNode="True" />
+                <LayoutItem Id="ProgressMessage" ViewItem="ProgressMessage" ShowCaption="" Index="13" IsNewNode="True" />
+                <LayoutItem Id="AutoSyncCurrentClip" ViewItem="AutoSyncCurrentClip" Index="14" IsNewNode="True" />
+                <LayoutItem Id="PlayAdjustedAudio" ViewItem="PlayAdjustedAudio" Index="15" IsNewNode="True" />
+                <LayoutItem Id="PlayBackgroundAudio" ViewItem="PlayBackgroundAudio" Index="16" IsNewNode="True" />
+                <LayoutItem Id="VideoMutePlay" ViewItem="VideoMutePlay" Index="17" IsNewNode="True" />
+                <LayoutItem Id="LastOutput" ViewItem="LastOutput" ShowCaption="" Index="18" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+          </TabbedGroup>
+          <LayoutItem Id="ProgressPercentage" ViewItem="ProgressPercentage" ShowCaption="" Index="1" IsNewNode="True" />
+          <LayoutGroup Id="SimpleEditors" Removed="True">
+            <LayoutItem Id="ProgressPercentage" ViewItem="ProgressPercentage" ShowCaption="" Index="3" IsNewNode="True" />
+            <LayoutGroup Id="VideoProject">
+              <LayoutItem Id="ProgressPercentage" Removed="True" />
+            </LayoutGroup>
+          </LayoutGroup>
+          <LayoutGroup Id="SizeableEditors" Removed="True" />
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
+    <DetailView Id="WhisperConfig_DetailView">
+      <Items>
+        <PropertyEditor Id="ConfigName" Caption="配置名称" />
+        <PropertyEditor Id="Description" Caption="描述" />
+        <PropertyEditor Id="IsDefault" Caption="是否为默认配置" />
+      </Items>
+      <Layout>
+        <LayoutGroup Id="Main">
+          <TabbedGroup Id="Tabs" Index="0">
+            <LayoutGroup Id="基础信息" ShowCaption="True" Index="0" IsNewNode="True">
+              <LayoutGroup Id="SimpleEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="VTBaseObject" Index="0" ShowCaption="False" IsNewNode="True">
+                  <LayoutItem Id="CreateTime" ViewItem="CreateTime" ShowCaption="" Index="0" IsNewNode="True" />
+                  <LayoutItem Id="LastUpdateTime" ViewItem="LastUpdateTime" ShowCaption="" Index="1" IsNewNode="True" />
+                </LayoutItem>
+                <LayoutItem Id="ConfigName" ViewItem="ConfigName" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="Description" ViewItem="Description" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="IsDefault" ViewItem="IsDefault" ShowCaption="" Index="3" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="输入输出" ShowCaption="True" Index="1" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="AudioFilePath" ViewItem="AudioFilePath" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="OutputFilePath" ViewItem="OutputFilePath" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="OutputFormat" ViewItem="OutputFormat" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="PrintProgress" ViewItem="PrintProgress" ShowCaption="" Index="3" IsNewNode="True" />
+                <LayoutItem Id="NoPrints" ViewItem="NoPrints" ShowCaption="" Index="4" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="模型配置" ShowCaption="True" Index="2" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="ModelPath" ViewItem="ModelPath" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="Language" ViewItem="Language" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="DetectLanguage" ViewItem="DetectLanguage" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="Prompt" ViewItem="Prompt" ShowCaption="" Index="3" IsNewNode="True" />
+                <LayoutItem Id="CarryInitialPrompt" ViewItem="CarryInitialPrompt" ShowCaption="" Index="4" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="音频处理" ShowCaption="True" Index="3" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="AudioContext" ViewItem="AudioContext" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="Offset" ViewItem="Offset" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="Duration" ViewItem="Duration" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="MaxContext" ViewItem="MaxContext" ShowCaption="" Index="3" IsNewNode="True" />
+                <LayoutItem Id="MaxLength" ViewItem="MaxLength" ShowCaption="" Index="4" IsNewNode="True" />
+                <LayoutItem Id="SplitOnWord" ViewItem="SplitOnWord" ShowCaption="" Index="5" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="解码配置" ShowCaption="True" Index="4" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="BestOf" ViewItem="BestOf" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="BeamSize" ViewItem="BeamSize" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="Temperature" ViewItem="Temperature" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="TemperatureInc" ViewItem="TemperatureInc" ShowCaption="" Index="3" IsNewNode="True" />
+                <LayoutItem Id="WordThreshold" ViewItem="WordThreshold" ShowCaption="" Index="4" IsNewNode="True" />
+                <LayoutItem Id="EntropyThreshold" ViewItem="EntropyThreshold" ShowCaption="" Index="5" IsNewNode="True" />
+                <LayoutItem Id="LogProbThreshold" ViewItem="LogProbThreshold" ShowCaption="" Index="6" IsNewNode="True" />
+                <LayoutItem Id="NoSpeechThreshold" ViewItem="NoSpeechThreshold" ShowCaption="" Index="7" IsNewNode="True" />
+                <LayoutItem Id="NoFallback" ViewItem="NoFallback" ShowCaption="" Index="8" IsNewNode="True" />
+                <LayoutItem Id="Translate" ViewItem="Translate" ShowCaption="" Index="9" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="高级配置" ShowCaption="True" Index="5" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="DebugMode" ViewItem="DebugMode" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="Diarize" ViewItem="Diarize" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="TinyDiarize" ViewItem="TinyDiarize" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="PrintSpecial" ViewItem="PrintSpecial" ShowCaption="" Index="3" IsNewNode="True" />
+                <LayoutItem Id="PrintColors" ViewItem="PrintColors" ShowCaption="" Index="4" IsNewNode="True" />
+                <LayoutItem Id="PrintConfidence" ViewItem="PrintConfidence" ShowCaption="" Index="5" IsNewNode="True" />
+                <LayoutItem Id="NoTimestamps" ViewItem="NoTimestamps" ShowCaption="" Index="6" IsNewNode="True" />
+                <LayoutItem Id="LogScore" ViewItem="LogScore" ShowCaption="" Index="7" IsNewNode="True" />
+                <LayoutItem Id="NoGpu" ViewItem="NoGpu" ShowCaption="" Index="8" IsNewNode="True" />
+                <LayoutItem Id="FlashAttention" ViewItem="FlashAttention" ShowCaption="" Index="9" IsNewNode="True" />
+                <LayoutItem Id="SuppressNonSpeechTokens" ViewItem="SuppressNonSpeechTokens" ShowCaption="" Index="10" IsNewNode="True" />
+                <LayoutItem Id="SuppressRegex" ViewItem="SuppressRegex" ShowCaption="" Index="11" IsNewNode="True" />
+                <LayoutItem Id="Grammar" ViewItem="Grammar" ShowCaption="" Index="12" IsNewNode="True" />
+                <LayoutItem Id="GrammarRule" ViewItem="GrammarRule" ShowCaption="" Index="13" IsNewNode="True" />
+                <LayoutItem Id="GrammarPenalty" ViewItem="GrammarPenalty" ShowCaption="" Index="14" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="VAD配置" ShowCaption="True" Index="6" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="EnableVad" ViewItem="EnableVad" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="VadModelPath" ViewItem="VadModelPath" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="VadThreshold" ViewItem="VadThreshold" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="VadMinSpeechDurationMs" ViewItem="VadMinSpeechDurationMs" ShowCaption="" Index="3" IsNewNode="True" />
+                <LayoutItem Id="VadMinSilenceDurationMs" ViewItem="VadMinSilenceDurationMs" ShowCaption="" Index="4" IsNewNode="True" />
+                <LayoutItem Id="VadMaxSpeechDurationS" ViewItem="VadMaxSpeechDurationS" ShowCaption="" Index="5" IsNewNode="True" />
+                <LayoutItem Id="VadSpeechPadMs" ViewItem="VadSpeechPadMs" ShowCaption="" Index="6" IsNewNode="True" />
+                <LayoutItem Id="VadSamplesOverlap" ViewItem="VadSamplesOverlap" ShowCaption="" Index="7" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="其他配置" ShowCaption="True" Index="7" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="FontPath" ViewItem="FontPath" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="OpenVinoDevice" ViewItem="OpenVinoDevice" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="DtwModel" ViewItem="DtwModel" ShowCaption="" Index="2" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+          </TabbedGroup>
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
+    <DetailView Id="WhisperTask_DetailView">
+      <Items>
+        <PropertyEditor Id="TaskName" Caption="任务名称" />
+        <PropertyEditor Id="Status" Caption="任务状态" />
+        <PropertyEditor Id="StartTime" Caption="开始时间" />
+        <PropertyEditor Id="EndTime" Caption="结束时间" />
+        <PropertyEditor Id="ProcessingDuration" Caption="处理时长(秒)" />
+        <PropertyEditor Id="ProgressPercentage" Caption="进度百分比" />
+      </Items>
+      <Layout>
+        <LayoutGroup Id="Main">
+          <TabbedGroup Id="Tabs" Index="0">
+            <LayoutGroup Id="基础信息" ShowCaption="True" Index="0" IsNewNode="True">
+              <LayoutGroup Id="SimpleEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="VTBaseObject" Index="0" ShowCaption="False" IsNewNode="True">
+                  <LayoutItem Id="CreateTime" ViewItem="CreateTime" ShowCaption="" Index="0" IsNewNode="True" />
+                  <LayoutItem Id="LastUpdateTime" ViewItem="LastUpdateTime" ShowCaption="" Index="1" IsNewNode="True" />
+                </LayoutItem>
+                <LayoutItem Id="TaskName" ViewItem="TaskName" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="Status" ViewItem="Status" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="StartTime" ViewItem="StartTime" ShowCaption="" Index="3" IsNewNode="True" />
+                <LayoutItem Id="EndTime" ViewItem="EndTime" ShowCaption="" Index="4" IsNewNode="True" />
+                <LayoutItem Id="ProcessingDuration" ViewItem="ProcessingDuration" ShowCaption="" Index="5" IsNewNode="True" />
+                <LayoutItem Id="ProgressPercentage" ViewItem="ProgressPercentage" ShowCaption="" Index="6" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="输入输出" ShowCaption="True" Index="1" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="AudioFilePath" ViewItem="AudioFilePath" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="OutputFilePath" ViewItem="OutputFilePath" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="OutputFormat" ViewItem="OutputFormat" ShowCaption="" Index="2" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="模型配置" ShowCaption="True" Index="2" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="ModelPath" ViewItem="ModelPath" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="Language" ViewItem="Language" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="DetectLanguage" ViewItem="DetectLanguage" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="Prompt" ViewItem="Prompt" ShowCaption="" Index="3" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="音频处理" ShowCaption="True" Index="3" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="MaxLength" ViewItem="MaxLength" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="SplitOnWord" ViewItem="SplitOnWord" ShowCaption="" Index="1" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="解码配置" ShowCaption="True" Index="4" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="BestOf" ViewItem="BestOf" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="BeamSize" ViewItem="BeamSize" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="Temperature" ViewItem="Temperature" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="Translate" ViewItem="Translate" ShowCaption="" Index="3" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="高级配置" ShowCaption="True" Index="5" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="Diarize" ViewItem="Diarize" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="TinyDiarize" ViewItem="TinyDiarize" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="NoGpu" ViewItem="NoGpu" ShowCaption="" Index="2" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="VAD配置" ShowCaption="True" Index="6" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="EnableVad" ViewItem="EnableVad" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="VadThreshold" ViewItem="VadThreshold" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="VadMinSpeechDurationMs" ViewItem="VadMinSpeechDurationMs" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="VadMinSilenceDurationMs" ViewItem="VadMinSilenceDurationMs" ShowCaption="" Index="3" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="执行结果" ShowCaption="True" Index="7" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="ExitCode" ViewItem="ExitCode" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="IsSuccess" ViewItem="IsSuccess" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="ErrorMessage" ViewItem="ErrorMessage" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="StandardOutput" ViewItem="StandardOutput" ShowCaption="" Index="3" IsNewNode="True" />
+                <LayoutItem Id="StandardError" ViewItem="StandardError" ShowCaption="" Index="4" IsNewNode="True" />
+                <LayoutItem Id="GeneratedFiles" ViewItem="GeneratedFiles" ShowCaption="" Index="5" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="关联" ShowCaption="True" Index="8" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="Config" ViewItem="Config" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="Result" ViewItem="Result" ShowCaption="" Index="1" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+          </TabbedGroup>
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
+    <DetailView Id="WhisperResult_DetailView">
+      <Items>
+        <PropertyEditor Id="ResultName" Caption="结果名称" />
+        <PropertyEditor Id="RecognizedText" Caption="识别文本" />
+        <PropertyEditor Id="JsonContent" Caption="JSON内容" />
+        <PropertyEditor Id="SrtContent" Caption="SRT内容" />
+        <PropertyEditor Id="VttContent" Caption="VTT内容" />
+        <PropertyEditor Id="TxtContent" Caption="TXT内容" />
+        <PropertyEditor Id="TotalDuration" Caption="总时长(秒)" />
+        <PropertyEditor Id="SegmentCount" Caption="段落数量" />
+        <PropertyEditor Id="WordCount" Caption="总词数" />
+        <PropertyEditor Id="AverageConfidence" Caption="平均置信度" />
+        <PropertyEditor Id="DetectedLanguage" Caption="检测到的语言" />
+        <PropertyEditor Id="LanguageConfidence" Caption="语言置信度" />
+      </Items>
+      <Layout>
+        <LayoutGroup Id="Main">
+          <TabbedGroup Id="Tabs" Index="0">
+            <LayoutGroup Id="基础信息" ShowCaption="True" Index="0" IsNewNode="True">
+              <LayoutGroup Id="SimpleEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="VTBaseObject" Index="0" ShowCaption="False" IsNewNode="True">
+                  <LayoutItem Id="CreateTime" ViewItem="CreateTime" ShowCaption="" Index="0" IsNewNode="True" />
+                  <LayoutItem Id="LastUpdateTime" ViewItem="LastUpdateTime" ShowCaption="" Index="1" IsNewNode="True" />
+                </LayoutItem>
+                <LayoutItem Id="ResultName" ViewItem="ResultName" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="Task" ViewItem="Task" ShowCaption="" Index="2" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="识别内容" ShowCaption="True" Index="1" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="RecognizedText" ViewItem="RecognizedText" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="JsonContent" ViewItem="JsonContent" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="SrtContent" ViewItem="SrtContent" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="VttContent" ViewItem="VttContent" ShowCaption="" Index="3" IsNewNode="True" />
+                <LayoutItem Id="TxtContent" ViewItem="TxtContent" ShowCaption="" Index="4" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="统计信息" ShowCaption="True" Index="2" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="TotalDuration" ViewItem="TotalDuration" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="SegmentCount" ViewItem="SegmentCount" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="WordCount" ViewItem="WordCount" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="AverageConfidence" ViewItem="AverageConfidence" ShowCaption="" Index="3" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="语言信息" ShowCaption="True" Index="3" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="DetectedLanguage" ViewItem="DetectedLanguage" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="LanguageConfidence" ViewItem="LanguageConfidence" ShowCaption="" Index="1" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="文件路径" ShowCaption="True" Index="4" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="JsonFilePath" ViewItem="JsonFilePath" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="SrtFilePath" ViewItem="SrtFilePath" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="VttFilePath" ViewItem="VttFilePath" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="TxtFilePath" ViewItem="TxtFilePath" ShowCaption="" Index="3" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="段落列表" ShowCaption="True" Index="5" IsNewNode="True">
+              <LayoutItem Id="Segments" ViewItem="Segments" ShowCaption="" Index="0" IsNewNode="True" />
+            </LayoutGroup>
+          </TabbedGroup>
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
+    <DetailView Id="WhisperPreset_DetailView">
+      <Items>
+        <PropertyEditor Id="PresetName" Caption="预设名称" />
+        <PropertyEditor Id="Description" Caption="描述" />
+        <PropertyEditor Id="Category" Caption="分类" />
+        <PropertyEditor Id="IsSystemPreset" Caption="是否为系统预设" />
+        <PropertyEditor Id="UsageCount" Caption="使用次数" />
+        <PropertyEditor Id="LastUsedTime" Caption="最后使用时间" />
+      </Items>
+      <Layout>
+        <LayoutGroup Id="Main">
+          <TabbedGroup Id="Tabs" Index="0">
+            <LayoutGroup Id="基础信息" ShowCaption="True" Index="0" IsNewNode="True">
+              <LayoutGroup Id="SimpleEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="VTBaseObject" Index="0" ShowCaption="False" IsNewNode="True">
+                  <LayoutItem Id="CreateTime" ViewItem="CreateTime" ShowCaption="" Index="0" IsNewNode="True" />
+                  <LayoutItem Id="LastUpdateTime" ViewItem="LastUpdateTime" ShowCaption="" Index="1" IsNewNode="True" />
+                </LayoutItem>
+                <LayoutItem Id="PresetName" ViewItem="PresetName" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="Description" ViewItem="Description" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="Category" ViewItem="Category" ShowCaption="" Index="3" IsNewNode="True" />
+                <LayoutItem Id="IsSystemPreset" ViewItem="IsSystemPreset" ShowCaption="" Index="4" IsNewNode="True" />
+                <LayoutItem Id="UsageCount" ViewItem="UsageCount" ShowCaption="" Index="5" IsNewNode="True" />
+                <LayoutItem Id="LastUsedTime" ViewItem="LastUsedTime" ShowCaption="" Index="6" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="快速配置" ShowCaption="True" Index="1" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="Language" ViewItem="Language" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="OutputFormat" ViewItem="OutputFormat" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="EnableVad" ViewItem="EnableVad" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="EnableTranslation" ViewItem="EnableTranslation" ShowCaption="" Index="3" IsNewNode="True" />
+                <LayoutItem Id="EnableDiarization" ViewItem="EnableDiarization" ShowCaption="" Index="4" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="精度配置" ShowCaption="True" Index="2" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="Temperature" ViewItem="Temperature" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="BestOf" ViewItem="BestOf" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="BeamSize" ViewItem="BeamSize" ShowCaption="" Index="2" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="段落配置" ShowCaption="True" Index="3" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="MaxLength" ViewItem="MaxLength" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="SplitOnWord" ViewItem="SplitOnWord" ShowCaption="" Index="1" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="VAD配置" ShowCaption="True" Index="4" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="VadThreshold" ViewItem="VadThreshold" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="VadMinSpeechDurationMs" ViewItem="VadMinSpeechDurationMs" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="VadMinSilenceDurationMs" ViewItem="VadMinSilenceDurationMs" ShowCaption="" Index="2" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+          </TabbedGroup>
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
+    <DetailView Id="WhisperSegment_DetailView">
+      <Items>
+        <PropertyEditor Id="Index" Caption="索引" />
+        <PropertyEditor Id="StartTime" Caption="开始时间(秒)" />
+        <PropertyEditor Id="EndTime" Caption="结束时间(秒)" />
+        <PropertyEditor Id="Duration" Caption="时长(秒)" />
+        <PropertyEditor Id="Text" Caption="识别文本" />
+        <PropertyEditor Id="TranslatedText" Caption="翻译文本" />
+        <PropertyEditor Id="Confidence" Caption="置信度" />
+        <PropertyEditor Id="NoSpeechProb" Caption="无语音概率" />
+        <PropertyEditor Id="SpeakerId" Caption="说话人ID" />
+        <PropertyEditor Id="SpeakerConfidence" Caption="说话人置信度" />
+        <PropertyEditor Id="WordCount" Caption="词数量" />
+        <PropertyEditor Id="WordsDetail" Caption="词详情" />
+      </Items>
+      <Layout>
+        <LayoutGroup Id="Main">
+          <TabbedGroup Id="Tabs" Index="0">
+            <LayoutGroup Id="基础信息" ShowCaption="True" Index="0" IsNewNode="True">
+              <LayoutGroup Id="SimpleEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="VTBaseObject" Index="0" ShowCaption="False" IsNewNode="True">
+                  <LayoutItem Id="CreateTime" ViewItem="CreateTime" ShowCaption="" Index="0" IsNewNode="True" />
+                  <LayoutItem Id="LastUpdateTime" ViewItem="LastUpdateTime" ShowCaption="" Index="1" IsNewNode="True" />
+                </LayoutItem>
+                <LayoutItem Id="Result" ViewItem="Result" ShowCaption="" Index="2" IsNewNode="True" />
+                <LayoutItem Id="Index" ViewItem="Index" ShowCaption="" Index="3" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="时间信息" ShowCaption="True" Index="1" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="StartTime" ViewItem="StartTime" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="EndTime" ViewItem="EndTime" ShowCaption="" Index="1" IsNewNode="True" />
+                <LayoutItem Id="Duration" ViewItem="Duration" ShowCaption="" Index="2" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="文本内容" ShowCaption="True" Index="2" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="Text" ViewItem="Text" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="TranslatedText" ViewItem="TranslatedText" ShowCaption="" Index="1" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="置信度信息" ShowCaption="True" Index="3" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="Confidence" ViewItem="Confidence" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="NoSpeechProb" ViewItem="NoSpeechProb" ShowCaption="" Index="1" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="说话人信息" ShowCaption="True" Index="4" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="SpeakerId" ViewItem="SpeakerId" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="SpeakerConfidence" ViewItem="SpeakerConfidence" ShowCaption="" Index="1" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+            <LayoutGroup Id="词级信息" ShowCaption="True" Index="5" IsNewNode="True">
+              <LayoutGroup Id="SizeableEditors" Index="0" ShowCaption="False" IsNewNode="True">
+                <LayoutItem Id="WordCount" ViewItem="WordCount" ShowCaption="" Index="0" IsNewNode="True" />
+                <LayoutItem Id="WordsDetail" ViewItem="WordsDetail" ShowCaption="" Index="1" IsNewNode="True" />
+              </LayoutGroup>
+            </LayoutGroup>
+          </TabbedGroup>
+        </LayoutGroup>
+      </Layout>
+    </DetailView>
+  </Views>
+</Application>
