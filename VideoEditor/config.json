@@ -1,0 +1,42 @@
+﻿{
+  "VideoTranslator": {
+    "Paths": {
+      "FfmpegPath": "D:\\VideoTranslator\\ffmpeg\\ffmpeg.exe",
+      "YtDlpPath": "C:\\Users\\Administrator\\AppData\\Roaming\\Subtitle Edit\\yt-dlp.exe",
+      "WhisperPath": "C:\\Users\\Administrator\\AppData\\Roaming\\Subtitle Edit\\Whisper\\Cpp\\whisper-cli.exe",
+      "WhisperModelPath": "D:\\VideoTranslator\\whisper.cpp\\ggml-large-v3.bin",
+      "WhisperSmallModelPath": "D:\\VideoTranslator\\whisper.cpp\\ggml-tiny-q5_1.bin",
+      "BaseDirectory": "videoProjects",
+      "PythonPath": "python",
+      "AudioSeparationScriptPath": "d:\\VideoTranslator\\VT\\VT.Module\\PythonScripts\\demucs_run.py",
+      "DemucsOutputBasePath": "d:\\VideoTranslator\\videoProjects",
+      "VoskModelPath": "C:\\Users\\Administrator\\AppData\\Roaming\\Subtitle Edit\\Vosk\\vosk-model-en-us-0.22",
+      "VoskSpeakerModelPath": "D:\\VideoTranslator\\第三方项目\\stt\\vosk-speaker-model\\vosk-model-spk-0.4",
+      "PurfviewFasterWhisperPath": "C:\\Users\\Administrator\\AppData\\Roaming\\Subtitle Edit\\Whisper\\Purfview-Whisper-Faster\\faster-whisper-xxl.exe",
+      "PurfviewFasterWhisperModelPath": "large-v3",
+      "SherpaSegmentationModelPath": "d:\\VideoTranslator\\第三方项目\\stt\\sherpa-onnx-exe-v1.12.23\\sherpa-onnx-pyannote-segmentation-3-0\\model.onnx",
+      "SherpaEmbeddingModelPath": "d:\\VideoTranslator\\第三方项目\\stt\\sherpa-onnx.models\\3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx",
+      "SherpaEmbeddingModelPathEn": "d:\\VideoTranslator\\第三方项目\\stt\\sherpa-onnx.models\\wespeaker_en_voxceleb_resnet34_LM.onnx",
+      "NodePath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\MSBuild\\Microsoft\\VisualStudio\\NodeJs\\node.exe"
+    },
+    "LLM": {
+      "ApiUrl": "http://127.0.0.1:1235/v1/",
+      "ApiKey": "dummy-key",
+      "ModelName": "glm4.7-flash"
+    },
+    "TTS": {
+      "Servers": [
+        "http://192.168.1.154:8000/generate",
+        "http://192.168.1.154:8001/generate",
+        "http://192.168.1.154:8002/generate",
+        "http://192.168.1.154:8003/generate"
+      ]
+    },
+    "General": {
+      "KeepFiles": true
+    }
+  },
+  "Database": {
+    "ConnectionString": "Data Source=(localdb)\\mssqllocaldb;Integrated Security=SSPI;Pooling=false;Initial Catalog=VT02;TrustServerCertificate=True"
+  }
+}
