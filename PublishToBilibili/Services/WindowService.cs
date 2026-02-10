@@ -4,7 +4,7 @@ using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.Tools;
 using FlaUI.UIA3;
-
+using Console = NewConsole.Console;
 namespace PublishToBilibili.Interfaces
 {
     public interface IWindowService

@@ -45,6 +45,7 @@ public class StreamSeparationResult
 
 public interface IFFmpegService
 {
+    public string FfmpegPath { get; }
     Task<string> ExecuteCommandAsync(string arguments);
     Task<string> ExecuteCommandAsync(List<string> arguments);
     Task<string> ExecuteCommandAsync(string arguments, TimeSpan? timeout);
@@ -52,6 +53,7 @@ public interface IFFmpegService
 }
 public class FFmpegService : ServiceBase, IFFmpegService
 {
+    public string FfmpegPath=> _ffmpegPath;
     private readonly string _ffmpegPath;
     private readonly FFmpegProgressParser _progressParser;
     private DateTime _lastProgressUpdateTime = DateTime.MinValue;

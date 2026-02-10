@@ -4,6 +4,7 @@ using Serilog;
 using Serilog.Events;
 using VideoTranslator.Config;
 using VideoTranslator.Interfaces;
+using VideoTranslator.Models;
 using VideoTranslator.Services;
 using VideoTranslator.Utils;
 using VT.Core;
@@ -63,8 +64,8 @@ class Program
 
         try
         {
-            logger.Information("开始测试 BrowseVideoButton_Click 逻辑");
-            await TestBrowseVideoButtonLogic(serviceProvider, logger);
+            logger.Information("开始测试 AudioTimelineComposer 大量片段处理");
+            await TestAudioTimelineComposerWithManySegments(serviceProvider, logger);
 
             logger.Information("所有测试完成");
         }
@@ -78,184 +79,81 @@ class Program
         Log.CloseAndFlush();
     }
 
-    
-
-    private static async Task TestBrowseVideoButtonLogic(IServiceProvider serviceProvider, Serilog.ILogger logger)
+    static async Task TestAudioTimelineComposerWithManySegments(IServiceProvider serviceProvider, Serilog.ILogger logger)
     {
-        try
+        var ffmpegService = serviceProvider.GetRequiredService<IFFmpegService>();
+        var progressService = serviceProvider.GetRequiredService<IProgressService>();
+        var composer = new AudioTimelineComposer(ffmpegService, progressService);
+
+        var testDir = @"d:\VideoTranslator\test_audio";
+        Directory.CreateDirectory(testDir);
+
+        logger.Information("开始创建测试音频文件");
+
+        var backgroundAudioPath = Path.Combine(testDir, "background.wav");
+        var segments = new List<AudioClipWithTime>();
+
+        var segmentDurationMs = 100;
+        var segmentGapMs = 100;
+        var totalSegments = 25;
+
+        await CreateTestAudioFile(backgroundAudioPath, 30000, ffmpegService, logger);
+
+        for (int i = 0; i < totalSegments; i++)
         {
-            Console.WriteLine($"\n开始测试 BrowseVideoButton_Click 逻辑...");
-            Console.WriteLine(new string('=', 80));
+            var segmentPath = Path.Combine(testDir, $"segment_{i:D3}.wav");
+            await CreateTestAudioFile(segmentPath, segmentDurationMs, ffmpegService, logger);
 
-            var ffmpegService = serviceProvider.GetRequiredService<IFFmpegService>();
-            var whisperService = serviceProvider.GetRequiredService<WhisperRecognitionService>();
+            var startTime = TimeSpan.FromMilliseconds(i * (segmentDurationMs + segmentGapMs));
+            var endTime = startTime + TimeSpan.FromMilliseconds(segmentDurationMs);
 
-            var testVideoPath = @"d:\VideoTranslator\testvideo\1.mp4";
-
-            if (!File.Exists(testVideoPath))
+            segments.Add(new AudioClipWithTime
             {
-                logger.Error("测试视频文件不存在: {VideoPath}", testVideoPath);
-                Console.WriteLine($"测试视频文件不存在: {testVideoPath}");
-                Console.WriteLine("请确保测试文件存在或修改路径");
-                return;
-            }
-
-            Console.WriteLine($"测试视频文件: {testVideoPath}");
-            Console.WriteLine($"\n开始模拟 BrowseVideoButton_Click 逻辑...");
-            Console.WriteLine(new string('-', 80));
-
-            
-
-            Console.WriteLine("\n步骤1: 获取视频流信息");
-            Console.WriteLine(new string('-', 80));
-
-            var streamInfo = await ffmpegService.GetVideoStreamInfo(testVideoPath);
-            Console.WriteLine($"有视频流: {streamInfo.HasVideo}");
-            Console.WriteLine($"有音频流: {streamInfo.HasAudio}");
-
-            logger.Information("视频流信息 - 有视频: {HasVideo}, 有音频: {HasAudio}", 
-                streamInfo.HasVideo, streamInfo.HasAudio);
-
-            
-
-            Console.WriteLine("\n步骤2: 模拟仅视频模式逻辑 (_videoOnlyMode.IsChecked == true)");
-            Console.WriteLine(new string('-', 80));
-
-            if (!streamInfo.HasAudio)
-            {
-                Console.WriteLine("视频没有音频流，自动切换到 静音视频+音频模式");
-                logger.Warning("视频没有音频流，需要切换模式");
-            }
-            else
-            {
-                Console.WriteLine("视频有音频流，开始分离视频和音频");
-
-                var videoDirectory = Path.GetDirectoryName(testVideoPath);
-                var audioFilePath = Path.Combine(videoDirectory!, "audio_source.wav");
-                var muteVideoPath = Path.Combine(videoDirectory!, $"mute_video_source{Path.GetExtension(testVideoPath)}");
-
-                Console.WriteLine($"音频输出路径: {audioFilePath}");
-                Console.WriteLine($"静音视频输出路径: {muteVideoPath}");
-
-                try
-                {
-                    
-
-                    Console.WriteLine("\n步骤3: 分离视频和音频");
-                    Console.WriteLine(new string('-', 80));
-
-                    await ffmpegService.SeparateMainVideoAndAudio(testVideoPath, muteVideoPath, audioFilePath);
-
-                    Console.WriteLine("分离完成");
-                    logger.Information("视频和音频分离完成");
-                    
-                    
-
-                    Console.WriteLine("\n验证生成的文件:");
-                    if (File.Exists(muteVideoPath))
-                    {
-                        var muteVideoInfo = new FileInfo(muteVideoPath);
-                        Console.WriteLine($"✓ 静音视频文件存在: {muteVideoPath}");
-                        Console.WriteLine($"  文件大小: {muteVideoInfo.Length / (1024.0 * 1024.0):F2} MB");
-                        logger.Information("静音视频文件已生成: {FilePath}, 大小: {SizeMB:F2} MB", 
-                            muteVideoPath, muteVideoInfo.Length / (1024.0 * 1024.0));
-                    }
-                    else
-                    {
-                        Console.WriteLine($"✗ 静音视频文件不存在: {muteVideoPath}");
-                        logger.Error("静音视频文件未生成: {FilePath}", muteVideoPath);
-                    }
-
-                    if (File.Exists(audioFilePath))
-                    {
-                        var audioInfo = new FileInfo(audioFilePath);
-                        Console.WriteLine($"✓ 音频文件存在: {audioFilePath}");
-                        Console.WriteLine($"  文件大小: {audioInfo.Length / (1024.0 * 1024.0):F2} MB");
-                        logger.Information("音频文件已生成: {FilePath}, 大小: {SizeMB:F2} MB", 
-                            audioFilePath, audioInfo.Length / (1024.0 * 1024.0));
-                    }
-                    else
-                    {
-                        Console.WriteLine($"✗ 音频文件不存在: {audioFilePath}");
-                        logger.Error("音频文件未生成: {FilePath}", audioFilePath);
-                    }
-
-                    
-
-                    
-
-                    Console.WriteLine("\n步骤4: 检测音频语言");
-                    Console.WriteLine(new string('-', 80));
-
-                    if (File.Exists(audioFilePath))
-                    {
-                        var detectedLanguage = await whisperService.DetectLanguageAsync(audioFilePath);
-                        Console.WriteLine($"检测到的语言: {detectedLanguage}");
-                        logger.Information("检测到的语言: {Language}", detectedLanguage);
-
-                        
-
-                        Console.WriteLine("\n步骤5: 根据检测结果设置语言");
-                        Console.WriteLine(new string('-', 80));
-
-                        Language sourceLanguage;
-                        Language targetLanguage;
-
-                        if (detectedLanguage == Language.English)
-                        {
-                            sourceLanguage = Language.English;
-                            targetLanguage = Language.Chinese;
-                            Console.WriteLine($"源语言: {sourceLanguage}");
-                            Console.WriteLine($"目标语言: {targetLanguage}");
-                        }
-                        else if (detectedLanguage == Language.Chinese)
-                        {
-                            sourceLanguage = Language.Chinese;
-                            targetLanguage = Language.English;
-                            Console.WriteLine($"源语言: {sourceLanguage}");
-                            Console.WriteLine($"目标语言: {targetLanguage}");
-                        }
-                        else
-                        {
-                            sourceLanguage = detectedLanguage;
-                            targetLanguage = Language.Chinese;
-                            Console.WriteLine($"源语言: {sourceLanguage}");
-                            Console.WriteLine($"目标语言: {targetLanguage}");
-                        }
-
-                        logger.Information("语言设置完成 - 源语言: {SourceLanguage}, 目标语言: {TargetLanguage}", 
-                            sourceLanguage, targetLanguage);
-
-                        
-                    }
-                    else
-                    {
-                        Console.WriteLine("音频文件不存在，跳过语言检测");
-                        logger.Warning("音频文件不存在，跳过语言检测");
-                    }
-
-                    
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"\n分离视频和音频失败: {ex.Message}");
-                    logger.Error(ex, "分离视频和音频失败");
-                }
-            }
-
-            
-
-            Console.WriteLine("\n测试完成");
-            Console.WriteLine(new string('=', 80));
-            logger.Information("BrowseVideoButton_Click 逻辑测试完成");
+                FilePath = segmentPath,
+                Start = startTime,
+                End = endTime,
+                AudioDurationMs = segmentDurationMs,
+                Index = i
+            });
         }
-        catch (Exception ex)
+
+        logger.Information($"创建了 {totalSegments} 个测试片段");
+
+        var outputPath = Path.Combine(testDir, "output.wav");
+
+        logger.Information("开始合成音频");
+        var result = await composer.Compose(backgroundAudioPath, segments, outputPath);
+
+        if (result.Success)
         {
-            logger.Error(ex, "BrowseVideoButton_Click 逻辑测试失败");
-            Console.WriteLine($"\n测试失败: {ex.Message}");
-            Console.WriteLine($"错误详情: {ex}");
+            logger.Information($"合成成功！输出文件: {result.OutputPath}");
+            logger.Information($"输出信息: {result.Output}");
+
+            if (File.Exists(outputPath))
+            {
+                var fileInfo = new FileInfo(outputPath);
+                logger.Information($"输出文件大小: {fileInfo.Length} 字节");
+            }
         }
+        else
+        {
+            logger.Error($"合成失败: {result.Error}");
+            logger.Error($"退出代码: {result.ExitCode}");
+        }
+
+        logger.Information("测试完成");
     }
+
+    static async Task CreateTestAudioFile(string outputPath, int durationMs, IFFmpegService ffmpegService, Serilog.ILogger logger)
+    {
+        var durationSec = durationMs / 1000.0;
+        var command = $"-f lavfi -i anullsrc=r=22050:cl=mono -t {durationSec:F3} -y \"{outputPath}\"";
+        
+        logger.Information($"创建测试音频: {outputPath}, 时长: {durationMs}ms");
+        await ffmpegService.ExecuteCommandAsync(command);
+    }
+
+    
 
     
 }

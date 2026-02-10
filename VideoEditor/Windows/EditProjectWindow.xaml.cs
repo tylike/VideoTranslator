@@ -1,4 +1,4 @@
-﻿﻿using System.Windows;
+﻿using System.Windows;
 using VT.Module.BusinessObjects;
 using DevExpress.ExpressApp;
 using DevExpress.ExpressApp.Xpo;
@@ -233,6 +233,16 @@ public partial class EditProjectWindow : WpfWindow
             _videoProject.SourceSubtitleType = SourceSubtitleTypeComboBox.SelectedItem as SubtitleType? ?? SubtitleType.SoftSubtitle;
             _videoProject.WriteTargetSubtitle = WriteTargetSubtitleCheckBox.IsChecked ?? false;
             _videoProject.TargetSubtitleType = TargetSubtitleTypeComboBox.SelectedItem as SubtitleType? ?? SubtitleType.SoftSubtitle;
+
+            _videoProject.ProjectPath = ProjectPathTextBox.Text.Trim();
+            _videoProject.SourceVideoPath = SourceVideoPathTextBox.Text.Trim();
+            _videoProject.SourceAudioPath = SourceAudioPathTextBox.Text.Trim();
+            _videoProject.SourceMutedVideoPath = SourceMutedVideoPathTextBox.Text.Trim();
+            _videoProject.SourceVocalAudioPath = SourceVocalAudioPathTextBox.Text.Trim();
+            _videoProject.SourceBackgroundAudioPath = SourceBackgroundAudioPathTextBox.Text.Trim();
+            _videoProject.SourceSubtitlePath = SourceSubtitlePathTextBox.Text.Trim();
+            _videoProject.TranslatedSubtitlePath = TranslatedSubtitlePathTextBox.Text.Trim();
+            _videoProject.OutputVideoPath = OutputVideoPathTextBox.Text.Trim();
 
             _logger.Information("项目数据保存完成");
         }

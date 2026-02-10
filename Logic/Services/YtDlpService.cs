@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -29,6 +29,9 @@ public static class YtDlpService
         var settings = ConfigurationService.Configuration;
         _ytDlpPath = settings.VideoTranslator.Paths.YtDlpPath ?? "yt-dlp";
         _ffmpegPath = settings.VideoTranslator.Paths.FfmpegPath ?? "ffmpeg";
+
+        var ffmpegDirectory = Path.GetDirectoryName(_ffmpegPath);
+        var ffmpegLocation = string.IsNullOrEmpty(ffmpegDirectory) ? _ffmpegPath : ffmpegDirectory;
 
         _youtubeDL = new YoutubeDL
         {
@@ -112,11 +115,15 @@ public static class YtDlpService
 
             var outputReporter = new Progress<string>(p => progress?.Report(p));
 
+            var ffmpegDirectory = Path.GetDirectoryName(_ffmpegPath);
+            var ffmpegLocation = string.IsNullOrEmpty(ffmpegDirectory) ? _ffmpegPath : ffmpegDirectory;
+
             var opts = new OptionSet
             {
                 Format = format,
                 MergeOutputFormat = DownloadMergeFormat.Mkv,
                 RecodeVideo = VideoRecodeFormat.None,
+                FfmpegLocation = ffmpegLocation,
                 Output = Path.Combine(outputDir ?? Environment.CurrentDirectory, $"{outputFileName}.%(ext)s")
             };
 
@@ -135,6 +142,29 @@ public static class YtDlpService
                     File.Move(downloadedFile, outputPath, true);
                 }
                 return outputPath;
+            }
+
+            if (!string.IsNullOrEmpty(outputPath))
+            {
+                var searchDir = Path.GetDirectoryName(outputPath);
+                var searchFileName = Path.GetFileNameWithoutExtension(outputPath);
+
+                if (!string.IsNullOrEmpty(searchDir) && Directory.Exists(searchDir))
+                {
+                    var possibleFiles = Directory.GetFiles(searchDir, $"{searchFileName}*")
+                        .Where(f => Path.GetFileNameWithoutExtension(f).StartsWith(searchFileName))
+                        .ToList();
+
+                    if (possibleFiles.Any())
+                    {
+                        var actualFile = possibleFiles.OrderByDescending(f => File.GetCreationTime(f)).First();
+                        if (!string.Equals(actualFile, outputPath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            File.Move(actualFile, outputPath, true);
+                        }
+                        return outputPath;
+                    }
+                }
             }
 
             return downloadedFile ?? outputPath;
@@ -185,15 +215,33 @@ public static class YtDlpService
 
             var outputReporter = new Progress<string>(p => progress?.Report(p));
 
+            var ffmpegDirectory = Path.GetDirectoryName(_ffmpegPath);
+            var ffmpegLocation = string.IsNullOrEmpty(ffmpegDirectory) ? _ffmpegPath : ffmpegDirectory;
+
+            string actualOutputFile = null;
+            var outputCapture = new Progress<string>(p =>
+            {
+                progress?.Report(p);
+                if (p.Contains("[ExtractAudio] Destination:"))
+                {
+                    var parts = p.Split(':');
+                    if (parts.Length > 1)
+                    {
+                        actualOutputFile = parts[1].Trim();
+                    }
+                }
+            });
+
             var opts = new OptionSet
             {
                 Format = format,
                 ExtractAudio = true,
                 AudioFormat = AudioConversionFormat.Mp3,
-                Output = Path.Combine(outputDir ?? Environment.CurrentDirectory, $"{outputFileName}.%(ext)s")
+                FfmpegLocation = ffmpegLocation,
+                Output = Path.Combine(outputDir ?? Environment.CurrentDirectory, $"{outputFileName}.mp3")
             };
 
-            var result = await _youtubeDL.RunWithOptions(url, opts, cancellationToken, progress: progressReporter, output: outputReporter);
+            var result = await _youtubeDL.RunWithOptions(url, opts, cancellationToken, progress: progressReporter, output: outputCapture);
 
             if (!result.Success)
             {
@@ -206,11 +254,50 @@ public static class YtDlpService
                 if (!string.IsNullOrEmpty(outputPath) && !string.Equals(downloadedFile, outputPath, StringComparison.OrdinalIgnoreCase))
                 {
                     File.Move(downloadedFile, outputPath, true);
+                    return outputPath;
+                }
+                return downloadedFile;
+            }
+
+            if (!string.IsNullOrEmpty(actualOutputFile) && File.Exists(actualOutputFile))
+            {
+                if (!string.IsNullOrEmpty(outputPath) && !string.Equals(actualOutputFile, outputPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    File.Move(actualOutputFile, outputPath, true);
                 }
                 return outputPath;
             }
 
-            return downloadedFile ?? outputPath;
+            var expectedFile = Path.Combine(outputDir ?? Environment.CurrentDirectory, $"{outputFileName}.mp3");
+            if (File.Exists(expectedFile))
+            {
+                return expectedFile;
+            }
+
+            if (!string.IsNullOrEmpty(outputPath))
+            {
+                var outputDirPath = Path.GetDirectoryName(outputPath);
+                var outputFileNameOnly = Path.GetFileNameWithoutExtension(outputPath);
+
+                if (!string.IsNullOrEmpty(outputDirPath) && Directory.Exists(outputDirPath))
+                {
+                    var possibleFiles = Directory.GetFiles(outputDirPath, $"{outputFileNameOnly}*")
+                        .Where(f => Path.GetFileNameWithoutExtension(f).StartsWith(outputFileNameOnly))
+                        .ToList();
+
+                    if (possibleFiles.Any())
+                    {
+                        var actualFile = possibleFiles.OrderByDescending(f => File.GetCreationTime(f)).First();
+                        if (!string.Equals(actualFile, outputPath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            File.Move(actualFile, outputPath, true);
+                        }
+                        return outputPath;
+                    }
+                }
+            }
+
+            return outputPath;
         }
         catch (Exception ex)
         {

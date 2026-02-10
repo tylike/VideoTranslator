@@ -37,11 +37,13 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Grid.Column="0" Text="视频地址:" VerticalAlignment="Center" Margin="0,0,10,0"/>
                             <TextBox Grid.Column="1" x:Name="UrlTextBox" VerticalContentAlignment="Center" Height="25"/>
-                            <Button Grid.Column="2" x:Name="FetchButton" Content="获取信息" Width="80" Height="25" Margin="10,0,0,0" Click="FetchButton_Click"/>
+                            <Button Grid.Column="2" x:Name="FetchButton" Content="获取信息" Width="80" Height="25" Margin="10,0,5,0" Click="FetchButton_Click"/>
+                            <Button Grid.Column="3" x:Name="QuickDownloadButton" Content="一键下载" Width="80" Height="25" Margin="5,0,0,0" Click="QuickDownloadButton_Click"/>
                         </Grid>
 
                         <TextBlock Grid.Row="1" x:Name="VideoInfoTextBlock" Text="" Foreground="Gray" Margin="0,0,0,10" TextWrapping="Wrap" Visibility="Collapsed"/>
@@ -312,7 +314,10 @@
         <Grid Grid.Row="2" x:Name="LoadingPanel" Visibility="Collapsed">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,20,0,20">
                 <TextBlock x:Name="LoadingTextBlock" Text="正在获取视频信息..." HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                <ProgressBar Width="200" Height="20" IsIndeterminate="True"/>
+                <Grid Width="400">
+                    <ProgressBar x:Name="LoadingProgressBar" Height="25" IsIndeterminate="True" Minimum="0" Maximum="100"/>
+                    <TextBlock x:Name="ProgressTextBlock" Text="" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="Bold"/>
+                </Grid>
             </StackPanel>
         </Grid>
 

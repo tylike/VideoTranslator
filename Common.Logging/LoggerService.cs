@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using Serilog;
 using Serilog.Events;
@@ -41,6 +41,7 @@ public static class LoggerService
             .MinimumLevel.Is(minimumLevel)
             .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
             .MinimumLevel.Override("System", LogEventLevel.Information)
+            .MinimumLevel.Override("TimeLine", LogEventLevel.Error)
             .Enrich.FromLogContext()
             .WriteTo.Console(outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
             .WriteTo.File(

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -105,6 +105,10 @@ public class BilibiliPublishHelper
             var softwareIntro = @"本视频使用一键自动配音翻译制作。
 视频生成软件介绍：【开源 一键可视化 视频翻译 原声克隆 原声情感 自动校对 IndexTTS】 https://www.bilibili.com/video/BV1rL6jBUEh4/?share_source=copy_web&vd_source=11323d03e28fe3d5d656ff7d4c5662fb
 
+有编程能力的兄弟可以尝试下，配置的内容挺多的。
+https://github.com/tylike/VideoTranslator
+https://github.com/tylike/index-tts
+
 ";
             fullResponse = softwareIntro + fullResponse;
             #endregion
@@ -128,6 +132,10 @@ public class BilibiliPublishHelper
             #region 添加软件介绍
             var softwareIntro = @"本视频使用一键自动配音翻译制作。
 视频生成软件介绍：【开源 一键可视化 视频翻译 原声克隆 原声情感 自动校对 IndexTTS】 https://www.bilibili.com/video/BV1rL6jBUEh4/?share_source=copy_web&vd_source=11323d03e28fe3d5d656ff7d4c5662fb
+
+有编程能力的兄弟可以尝试下，配置的内容挺多的。
+https://github.com/tylike/VideoTranslator
+https://github.com/tylike/index-tts
 
 ";
             defaultDescription = softwareIntro + defaultDescription;
@@ -267,6 +275,10 @@ public class BilibiliPublishHelper
                     #region 添加软件介绍
                     var softwareIntro = @"本视频使用一键自动配音翻译制作。
 视频生成软件介绍：【开源 一键可视化 视频翻译 原声克隆 原声情感 自动校对 IndexTTS】 https://www.bilibili.com/video/BV1rL6jBUEh4/?share_source=copy_web&vd_source=11323d03e28fe3d5d656ff7d4c5662fb
+
+有编程能力的兄弟可以尝试下，配置的内容挺多的。
+https://github.com/tylike/VideoTranslator
+https://github.com/tylike/index-tts
 
 ";
                     publishInfo.Description = softwareIntro + publishInfo.Description;

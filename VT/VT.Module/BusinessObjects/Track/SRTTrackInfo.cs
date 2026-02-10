@@ -336,6 +336,10 @@ public class SRTTrackInfo : TrackInfo
         s.progress.SetStatusMessage(string.Join("\n", subtitles.Select(x => $"{x.TTSReference.FilePath}:{x.TTSReference.Duration}")));
 
         #region 使用支持服务切换的TTS生成方法
+        var maxRetryCount = 3;
+        var retryCommands = new Dictionary<int, (TTSCommand command, SRTClip subtitle, int retryCount)>();
+        var completedSegments = new HashSet<int>();
+
         var ttsSegments = await s.ttsService.GenerateTTSAsync(
             ttsCommands,
             onSegmentCompleted: async (current, totalCount, segment) =>
@@ -354,17 +358,46 @@ public class SRTTrackInfo : TrackInfo
                         if (audioClip != null)
                         {
                             await audioClip.SetAudioFile(segment.AudioPath);
-                            audioClip.Save();
 
-                            try
+                            var expectedDuration = subtitle.Duration;
+                            var actualDuration = audioClip.Duration;
+
+                            s.progress?.Debug($"片段 {segment.Index}: 预期时长 {expectedDuration:F2}s, 实际时长 {actualDuration:F2}s");
+
+                            if (actualDuration > expectedDuration * 2)
                             {
-                                VideoProject.OnTrackChanged?.Invoke(videoProject, MediaType.TTS分段);
+                                s.progress?.Warning($"片段 {segment.Index} 生成的音频时长 ({actualDuration:F2}s) 超过预期时长 ({expectedDuration:F2}s) 的2倍，标记为需要重试");
+
+                                if (!retryCommands.ContainsKey(segment.Index))
+                                {
+                                    retryCommands[segment.Index] = (
+                                        new TTSCommand
+                                        {
+                                            Index = segment.Index,
+                                            Text = subtitle.Text,
+                                            ReferenceAudio = GetReferenceAudioPath(subtitle),
+                                            OutputAudio = Path.Combine(segmentsTargetDir, $"tts_{Guid.NewGuid()}_{segment.Index:0000}.wav")
+                                        },
+                                        subtitle,
+                                        0
+                                    );
+                                }
                             }
-                            catch (Exception ex)
+                            else
                             {
-                                s.progress?.Error($"触发 OnTrackChanged 事件时发生错误: {ex.Message}");
-                                s.progress?.Error($"异常类型: {ex.GetType().Name}");
-                                s.progress?.Error($"堆栈跟踪: {ex.StackTrace}");
+                                audioClip.Save();
+                                completedSegments.Add(segment.Index);
+
+                                try
+                                {
+                                    VideoProject.OnTrackChanged?.Invoke(videoProject, MediaType.TTS分段);
+                                }
+                                catch (Exception ex)
+                                {
+                                    s.progress?.Error($"触发 OnTrackChanged 事件时发生错误: {ex.Message}");
+                                    s.progress?.Error($"异常类型: {ex.GetType().Name}");
+                                    s.progress?.Error($"堆栈跟踪: {ex.StackTrace}");
+                                }
                             }
                         }
                     }
@@ -379,6 +412,83 @@ public class SRTTrackInfo : TrackInfo
             cleanOld: regenerate,
             limit: -1
         );
+
+        #region 重试超长音频片段
+        foreach (var retryItem in retryCommands.Values.ToList())
+        {
+            var (command, subtitle, retryCount) = retryItem;
+
+            if (retryCount >= maxRetryCount)
+            {
+                s.progress?.Error($"片段 {command.Index} 已达到最大重试次数 ({maxRetryCount})，放弃重试");
+                var audioClip = ttsTrack.Segments.OfType<AudioClip>().FirstOrDefault(ac => ac.Index == command.Index);
+                if (audioClip != null)
+                {
+                    audioClip.Save();
+                    completedSegments.Add(command.Index);
+                }
+                continue;
+            }
+
+            s.progress?.Report($"开始重试片段 {command.Index} (第 {retryCount + 1}/{maxRetryCount} 次)");
+
+            var retrySegment = await s.ttsService.GenerateSingleTTSAsync(command);
+
+            if (retrySegment != null && File.Exists(retrySegment.AudioPath))
+            {
+                var audioClip = ttsTrack.Segments.OfType<AudioClip>().FirstOrDefault(ac => ac.Index == command.Index);
+                if (audioClip != null)
+                {
+                    await audioClip.SetAudioFile(retrySegment.AudioPath);
+
+                    var expectedDuration = subtitle.Duration;
+                    var actualDuration = audioClip.Duration;
+
+                    s.progress?.Debug($"重试片段 {command.Index}: 预期时长 {expectedDuration:F2}s, 实际时长 {actualDuration:F2}s");
+
+                    if (actualDuration > expectedDuration * 2)
+                    {
+                        s.progress?.Warning($"重试片段 {command.Index} 仍然超长，准备再次重试");
+                        retryCommands[command.Index] = (
+                            new TTSCommand
+                            {
+                                Index = command.Index,
+                                Text = subtitle.Text,
+                                ReferenceAudio = GetReferenceAudioPath(subtitle),
+                                OutputAudio = Path.Combine(segmentsTargetDir, $"tts_{Guid.NewGuid()}_{command.Index:0000}.wav")
+                            },
+                            subtitle,
+                            retryCount + 1
+                        );
+                    }
+                    else
+                    {
+                        s.progress?.Report($"片段 {command.Index} 重试成功");
+                        audioClip.Save();
+                        completedSegments.Add(command.Index);
+                        retryCommands.Remove(command.Index);
+
+                        try
+                        {
+                            VideoProject.OnTrackChanged?.Invoke(videoProject, MediaType.TTS分段);
+                        }
+                        catch (Exception ex)
+                        {
+                            s.progress?.Error($"触发 OnTrackChanged 事件时发生错误: {ex.Message}");
+                            s.progress?.Error($"异常类型: {ex.GetType().Name}");
+                            s.progress?.Error($"堆栈跟踪: {ex.StackTrace}");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                s.progress?.Error($"重试片段 {command.Index} 失败");
+            }
+        }
+        #endregion
+
+        s.progress?.Report($"TTS生成完成，成功 {completedSegments.Count}/{totalCount} 个片段");
         #endregion
 
         return ttsTrack;

@@ -48,6 +48,67 @@ public class AudioTimelineComposer
         return await ffmpeg.ExecuteCommandAsync(arguments);       
     }
 
+    private async Task<string> ExecuteFfmpegViaBatchFile(string batchFilePath)
+    {
+        var processInfo = new ProcessStartInfo
+        {
+            FileName = "cmd.exe",
+            Arguments = $"/c \"{batchFilePath}\"",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WorkingDirectory = Path.GetDirectoryName(batchFilePath),
+            StandardOutputEncoding = System.Text.Encoding.UTF8,
+            StandardErrorEncoding = System.Text.Encoding.UTF8
+        };
+
+        using var process = new Process { StartInfo = processInfo };
+        progress?.Report($"[AudioTimelineComposer] 执行批处理文件: {batchFilePath}");
+
+        process.Start();
+
+        var outputBuilder = new System.Text.StringBuilder();
+        var errorBuilder = new System.Text.StringBuilder();
+
+        var outputTask = Task.Run(() =>
+        {
+            while (!process.StandardOutput.EndOfStream)
+            {
+                var line = process.StandardOutput.ReadLine();
+                if (line != null)
+                {
+                    outputBuilder.AppendLine(line);
+                    progress?.Report($"[FFmpeg] {line}");
+                }
+            }
+        });
+
+        var errorTask = Task.Run(() =>
+        {
+            while (!process.StandardError.EndOfStream)
+            {
+                var line = process.StandardError.ReadLine();
+                if (line != null)
+                {
+                    errorBuilder.AppendLine(line);
+                    progress?.Report($"[FFmpeg] {line}");
+                }
+            }
+        });
+
+        await Task.WhenAll(outputTask, errorTask);
+        await process.WaitForExitAsync();
+
+        if (process.ExitCode != 0)
+        {
+            progress?.Report($"[FFmpeg] 退出代码: {process.ExitCode}");
+            throw new Exception($"FFmpeg command failed with exit code {process.ExitCode}. Error: {errorBuilder}");
+        }
+
+        return outputBuilder.ToString() + errorBuilder.ToString();
+    }
+
     //实现目标:
     //1. 将segments中的每个音频片段插入到backgroundAudio的指定时间点。
     //2. 如果segments之间有间隔，则backgroundAudio在这些间隔时间内播放。
@@ -156,30 +217,70 @@ public class AudioTimelineComposer
             #region 混合所有音频
             log("混合所有音频轨道...");
 
-            var mixInputs = new List<string> { $"-i \"{bgResampledPath}\"" };
-            for (int i = 0; i < processedSegments.Count; i++)
+            // 采用分段处理策略，避免filter链过长
+            const int batchSize = 50; // 每批最多处理10个片段
+            var currentMixedFile = bgResampledPath;
+            var totalBatches = (int)Math.Ceiling((double)processedSegments.Count / batchSize);
+
+            for (int batchIndex = 0; batchIndex < totalBatches; batchIndex++)
             {
-                mixInputs.Add($"-i \"{processedSegments[i]}\"");
+                var startIndex = batchIndex * batchSize;
+                var endIndex = Math.Min(startIndex + batchSize, processedSegments.Count);
+                var currentBatchSize = endIndex - startIndex;
+
+                log($"  处理批次 {batchIndex + 1}/{totalBatches}，包含 {currentBatchSize} 个片段");
+
+                var batchInputs = new List<string> { $"-i \"{currentMixedFile}\"" };
+                var delayFilters = new List<string>();
+
+                for (int i = startIndex; i < endIndex; i++)
+                {
+                    batchInputs.Add($"-i \"{processedSegments[i]}\"");
+                    var startMs = sortedSegments[i].Start.TotalMilliseconds;
+                    delayFilters.Add($"[{i - startIndex + 1}:a]adelay={startMs:F0}|{startMs:F0}[seg{i - startIndex}];");
+                }
+
+                var batchInputsCmd = string.Join(" ", batchInputs);
+                var filterChain = string.Join("", delayFilters);
+                filterChain += $"[0:a]volume=1[bg];[bg]";
+                for (int i = 0; i < currentBatchSize; i++)
+                {
+                    filterChain += $"[seg{i}]";
+                }
+                filterChain += $"amix=inputs={currentBatchSize + 1}:duration=longest:normalize=0[outa]";
+
+                log($"  批次{batchIndex + 1} Filter: {filterChain}");
+
+                var batchOutput = batchIndex == totalBatches - 1 
+                    ? outputPath 
+                    : Path.Combine(debugSubDir, $"mixed_batch_{batchIndex}.wav");
+
+                var batchCmd = $"\"{ffmpeg.FfmpegPath}\" {batchInputsCmd} -filter_complex \"{filterChain}\" -map \"[outa]\" -ar {segSampleRate} -ac {segChannels} -y \"{batchOutput}\"";
+                
+                var batchFile = Path.Combine(debugSubDir, $"ffmpeg_batch_{batchIndex}_{Guid.NewGuid()}.cmd");
+                await File.WriteAllTextAsync(batchFile, $"@echo off{Environment.NewLine}{batchCmd}{Environment.NewLine}");
+                log($"  创建批处理文件: {batchFile}");
+
+                try
+                {
+                    await ExecuteFfmpegViaBatchFile(batchFile);
+                    log($"  批次{batchIndex + 1}混合完成: {batchOutput}");
+                }
+                finally
+                {
+                    if (File.Exists(batchFile))
+                    {
+                        File.Delete(batchFile);
+                    }
+                }
+
+                // 更新当前混合文件为本次批次的输出
+                if (batchIndex < totalBatches - 1)
+                {
+                    currentMixedFile = batchOutput;
+                }
             }
 
-            var delayFilters = new List<string>();
-            for (int i = 0; i < processedSegments.Count; i++)
-            {
-                var startMs = sortedSegments[i].Start.TotalMilliseconds;
-                delayFilters.Add($"[{i + 1}:a]adelay={startMs:F0}|{startMs:F0}[seg{i}];");
-            }
-
-            var mixInputsCmd = string.Join(" ", mixInputs);
-            var filterChain = string.Join("", delayFilters);
-            filterChain += $"[0:a]volume=1[bg];[bg]";
-            for (int i = 0; i < processedSegments.Count; i++)
-            {
-                filterChain += $"[seg{i}]";
-            }
-            filterChain += $"amix=inputs={processedSegments.Count + 1}:duration=longest:normalize=0[outa]";
-
-            log($"  Filter: {filterChain}");
-            await ExecuteFfmpeg($"{mixInputsCmd} -filter_complex \"{filterChain}\" -map \"[outa]\" -ar {segSampleRate} -ac {segChannels} -y \"{outputPath}\"");
             log($"  输出已保存到: {outputPath}");
             #endregion
 

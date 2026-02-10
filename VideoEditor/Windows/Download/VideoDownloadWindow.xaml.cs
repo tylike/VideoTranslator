@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using System;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -139,7 +139,7 @@ public partial class VideoDownloadWindow : WpfWindow
                     foreach (var selectedFormat in selectedFormats)
                     {
                         var videoId = _videoInfo?.ID ?? "video";
-                        var audioPath = Path.Combine(downloadFolder, $"{videoId}_audio.{selectedFormat.Ext}");
+                        var audioPath = Path.Combine(downloadFolder, $"{videoId}_audio.mp3");
                         _logger.Information("开始下载音频: 格式ID={FormatId}", selectedFormat.FormatId);
 
                         try
@@ -156,7 +156,7 @@ public partial class VideoDownloadWindow : WpfWindow
                         {
                             _logger.Warning(ex, "格式ID={FormatId}不可用，尝试自动选择格式", selectedFormat.FormatId);
 
-                            var autoAudioPath = Path.Combine(downloadFolder, $"{videoId}_audio_auto.{selectedFormat.Ext}");
+                            var autoAudioPath = Path.Combine(downloadFolder, $"{videoId}_audio_auto.mp3");
                             _downloadedAudioPath = await YtDlpService.DownloadAudioAsync(
                                 url,
                                 autoAudioPath,
@@ -269,8 +269,16 @@ public partial class VideoDownloadWindow : WpfWindow
     {
         LoadingPanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         FetchButton.IsEnabled = !show;
+        QuickDownloadButton.IsEnabled = !show;
         DownloadButton.IsEnabled = !show && _videoInfo != null;
         NewProjectButton.IsEnabled = !show && (!string.IsNullOrEmpty(_downloadedVideoPath) || !string.IsNullOrEmpty(_downloadedAudioPath));
+
+        if (show)
+        {
+            LoadingProgressBar.IsIndeterminate = true;
+            LoadingProgressBar.Value = 0;
+            ProgressTextBlock.Text = "";
+        }
     }
 
     private void HideOptions()
@@ -380,6 +388,29 @@ public partial class VideoDownloadWindow : WpfWindow
     private void UpdateProgress(string message)
     {
         _logger.Debug("进度更新: {Message}", message);
+
+        if (string.IsNullOrEmpty(message))
+        {
+            return;
+        }
+
+        LoadingTextBlock.Text = message;
+
+        var percentageMatch = System.Text.RegularExpressions.Regex.Match(message, @"(\d+\.?\d*)%");
+        if (percentageMatch.Success)
+        {
+            if (double.TryParse(percentageMatch.Groups[1].Value, out var percentage))
+            {
+                LoadingProgressBar.IsIndeterminate = false;
+                LoadingProgressBar.Value = percentage;
+                ProgressTextBlock.Text = $"{percentage:F1}%";
+            }
+        }
+        else
+        {
+            LoadingProgressBar.IsIndeterminate = true;
+            ProgressTextBlock.Text = "";
+        }
     }
 
     /// <summary>
@@ -552,9 +583,7 @@ public partial class VideoDownloadWindow : WpfWindow
             if (!string.IsNullOrEmpty(_downloadedAudioPath) && !File.Exists(_downloadedAudioPath))
             {
                 var message = $"音频文件不存在: {_downloadedAudioPath}";
-                _logger.Error(message);
-                MessageBox.Show(message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
+                _logger.Warning(message, "如果视频包含音频，系统将自动提取");
             }
 
             #endregion
